@@ -1,0 +1,559 @@
+.reports-page {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.page-header h1 {
+  margin: 0 0 0.5rem 0;
+  font-size: 2.5rem;
+  color: var(--text-primary);
+}
+
+.header-controls {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.period-selector {
+  padding: 0.75rem 1.25rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: white;
+  color: var(--text-primary);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.period-selector:hover {
+  border-color: var(--primary-color);
+}
+
+.summary-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2.5rem;
+}
+
+.summary-card {
+  background: white;
+  border-radius: var(--radius-lg);
+  padding: 1.75rem;
+  display: flex;
+  gap: 1.25rem;
+  align-items: flex-start;
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-light);
+  transition: all 0.3s ease;
+}
+
+.summary-card:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--shadow-lg);
+}
+
+.summary-icon {
+  font-size: 2.5rem;
+  flex-shrink: 0;
+}
+
+.summary-content {
+  flex: 1;
+}
+
+.summary-content h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.summary-value {
+  margin: 0 0 0.5rem 0;
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.summary-trend {
+  font-size: 0.85rem;
+  font-weight: 500;
+  padding: 0.25rem 0.75rem;
+  border-radius: 1rem;
+  display: inline-block;
+}
+
+.summary-trend.positive {
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--success-color);
+}
+
+.summary-trend.neutral {
+  background: rgba(107, 114, 128, 0.1);
+  color: var(--text-secondary);
+}
+
+.reports-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.chart-card {
+  grid-column: span 2;
+}
+
+.card-subtitle {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.chart-legend {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.legend-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.line-chart {
+  position: relative;
+  height: 250px;
+  margin-top: 2rem;
+}
+
+.chart-grid {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 30px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.grid-line {
+  height: 1px;
+  background: var(--border-light);
+}
+
+.chart-svg {
+  width: 100%;
+  height: calc(100% - 30px);
+}
+
+.chart-labels {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-around;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.subject-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.subject-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  transition: all 0.2s ease;
+}
+
+.subject-item:hover {
+  background: var(--bg-tertiary);
+  transform: translateX(5px);
+}
+
+.subject-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.subject-color {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  flex-shrink: 0;
+}
+
+.subject-name {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.subject-stats {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.subject-hours {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.subject-percentage {
+  font-weight: 700;
+  color: var(--primary-color);
+  font-size: 1.1rem;
+}
+
+.productivity-heatmap {
+  grid-column: 1 / -1;
+}
+
+.heatmap {
+  margin-top: 1.5rem;
+}
+
+.heatmap-labels {
+  display: grid;
+  grid-template-columns: 100px repeat(7, 1fr);
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.heatmap-labels span:first-child {
+  visibility: hidden;
+}
+
+.heatmap-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.heatmap-row {
+  display: grid;
+  grid-template-columns: 100px repeat(7, 1fr);
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.time-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.heatmap-cell {
+  aspect-ratio: 1;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.heatmap-cell:hover {
+  transform: scale(1.1);
+  box-shadow: var(--shadow-md);
+}
+
+.heatmap-cell.intensity-1 {
+  background: rgba(99, 102, 241, 0.2);
+}
+
+.heatmap-cell.intensity-2 {
+  background: rgba(99, 102, 241, 0.4);
+}
+
+.heatmap-cell.intensity-3 {
+  background: rgba(99, 102, 241, 0.6);
+}
+
+.heatmap-cell.intensity-4 {
+  background: rgba(99, 102, 241, 0.8);
+}
+
+.heatmap-cell.intensity-5 {
+  background: rgba(99, 102, 241, 1);
+}
+
+.achievements-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.achievement-item {
+  display: flex;
+  gap: 1.25rem;
+  padding: 1.25rem;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  transition: all 0.3s ease;
+}
+
+.achievement-item:hover {
+  background: var(--bg-tertiary);
+  transform: translateX(5px);
+}
+
+.achievement-badge {
+  width: 60px;
+  height: 60px;
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  flex-shrink: 0;
+}
+
+.achievement-info h4 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.1rem;
+  color: var(--text-primary);
+}
+
+.achievement-info p {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.achievement-date {
+  font-size: 0.85rem;
+  color: var(--text-light);
+}
+
+@media (max-width: 1024px) {
+  .reports-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .chart-card {
+    grid-column: span 1;
+  }
+}
+
+@media (max-width: 750px) {
+  .reports-page {
+    padding: 0;
+  }
+
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .page-header h1 {
+    font-size: 2rem;
+  }
+
+  .header-controls {
+    width: 100%;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .period-selector,
+  .btn-primary {
+    width: 100%;
+    padding: 0.875rem 1rem;
+    font-size: 0.9375rem;
+  }
+
+  .summary-cards {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .summary-card {
+    padding: 1.25rem;
+  }
+
+  .summary-icon {
+    font-size: 2rem;
+  }
+
+  .summary-content h3 {
+    font-size: 0.8125rem;
+  }
+
+  .summary-value {
+    font-size: 1.75rem;
+  }
+
+  .summary-trend {
+    font-size: 0.8125rem;
+    padding: 0.25rem 0.625rem;
+  }
+
+  .reports-grid {
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .card {
+    padding: 1.25rem;
+  }
+
+  .card h2 {
+    font-size: 1.25rem;
+  }
+
+  .card-subtitle {
+    font-size: 0.8125rem;
+  }
+
+  .line-chart {
+    height: 200px;
+  }
+
+  .chart-labels {
+    font-size: 0.75rem;
+  }
+
+  .subject-item {
+    padding: 0.875rem;
+  }
+
+  .subject-color {
+    width: 36px;
+    height: 36px;
+  }
+
+  .subject-name {
+    font-size: 0.9375rem;
+  }
+
+  .subject-hours {
+    font-size: 0.875rem;
+  }
+
+  .subject-percentage {
+    font-size: 1rem;
+  }
+
+  .heatmap-labels,
+  .heatmap-row {
+    grid-template-columns: 70px repeat(7, 1fr);
+    gap: 0.375rem;
+  }
+
+  .heatmap-labels {
+    font-size: 0.75rem;
+  }
+
+  .time-label {
+    font-size: 0.75rem;
+  }
+
+  .achievement-item {
+    padding: 1rem;
+  }
+
+  .achievement-badge {
+    width: 50px;
+    height: 50px;
+    font-size: 1.75rem;
+  }
+
+  .achievement-info h4 {
+    font-size: 1rem;
+  }
+
+  .achievement-info p {
+    font-size: 0.8125rem;
+  }
+
+  .achievement-date {
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .page-header h1 {
+    font-size: 1.75rem;
+  }
+
+  .summary-card {
+    padding: 1rem;
+    gap: 1rem;
+  }
+
+  .summary-icon {
+    font-size: 1.75rem;
+  }
+
+  .summary-value {
+    font-size: 1.5rem;
+  }
+
+  .card {
+    padding: 1rem;
+  }
+
+  .card h2 {
+    font-size: 1.125rem;
+  }
+
+  .line-chart {
+    height: 180px;
+  }
+
+  .heatmap-labels,
+  .heatmap-row {
+    grid-template-columns: 60px repeat(7, 1fr);
+    gap: 0.25rem;
+  }
+
+  .heatmap-labels {
+    font-size: 0.6875rem;
+  }
+
+  .time-label {
+    font-size: 0.6875rem;
+  }
+
+  .achievement-badge {
+    width: 44px;
+    height: 44px;
+    font-size: 1.5rem;
+  }
+}
+
