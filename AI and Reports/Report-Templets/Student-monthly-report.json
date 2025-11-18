@@ -1,0 +1,16 @@
+{
+  "report_type": "student_monthly",
+  "student_id": "example-student-id",
+  "month": "2025-11",
+  "hours_per_week": [10, 14, 12, 8],
+  "weekly_focus_scores": [78, 84, 80, 75],
+  "trend": "slightly_down_in_last_week",
+  "common_distractions": ["phone", "social_media"],
+  "mood_trend": "mostly_stable",
+  "notes": "Study time dipped in the last week due to other course workloads.",
+  "recommendations": [
+    "Try to keep weekly study hours above 10 to stay on track.",
+    "Maintain consistent start times around your peak focus window.",
+    "Schedule short breaks every 45–60 minutes to avoid burnout."
+  ]
+}
