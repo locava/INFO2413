@@ -1,6 +1,6 @@
 {
   "report_type": "student_weekly",
-  "student_id": "example-student-id",
+  "student_id": "student-id",
   "week_start": "2025-11-10",
   "week_end": "2025-11-16",
   "summary": {
@@ -30,3 +30,4 @@
     "Phone appears in many of your sessions. Consider leaving it outside the study area."
   ]
 }
+
