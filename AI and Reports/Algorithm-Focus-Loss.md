@@ -50,11 +50,18 @@ During an active study session, the backend periodically sends:
   "course_id": "INFO2413",
   "elapsed_minutes": 50
 }
-The AI calculates the warning threshold using:
 
-warning_threshold = focus_loss_minutes × 0.75
+{
+  "student_id": "123",
+  "course_id": "INFO2413",
+  "elapsed_minutes": 50,
+  "focus_loss_minutes": 65,
+  "threshold_minutes": 48.75,
+  "trigger_alert": true,
+  "reason": "Elapsed time exceeded 75% of predicted focus-loss point."
+}
+{
+  "trigger_alert": false
+}
 
-If predicted focus-loss is 65 minutes:
-
-warning_threshold = 65 × 0.75 = 48.75 minutes
 
