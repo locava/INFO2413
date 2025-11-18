@@ -38,3 +38,21 @@ The system identifies the *approximate point* where performance decreases:
 
 From these patterns, AI estimates a number such as:
 
+
+This value is saved in `focus_models.focus_loss_minutes`.
+
+---
+
+## 4. Real-Time Focus Warning Logic (75% Rule)
+
+During an active study session, the backend periodically sends:
+
+```json
+{
+  "student_id": "123",
+  "course_id": "INFO2413",
+  "elapsed_minutes": 50
+}
+
+
+
