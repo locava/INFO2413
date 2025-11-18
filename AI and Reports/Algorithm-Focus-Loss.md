@@ -1,50 +1,47 @@
 # Focus-Loss Prediction Algorithm – Design (Person 4)
 
 ## 1. Purpose
-This algorithm predicts when a student is likely to lose focus during a study session.  
-It allows the backend to trigger a **focus warning alert** at the right time.
+This document explains how the system predicts **when a student is likely to lose focus** during a study session.  
+The goal is to trigger a **focus warning alert** at the right time to improve productivity and prevent burnout.
 
-This is a simple, rule-based algorithm — no machine learning is required for this project.
-
----
-
-## 2. Inputs Required
-The AI needs the following information from the backend:
-
-- `student_id` – the student being monitored  
-- `course_id` – optional per-course model  
-- `elapsed_minutes` – how long the current study session has been active  
-- `focus_loss_minutes` – predicted focus drop time (from focus_models)  
-- `average_session_minutes` – fallback if no model exists  
+This is a **simple, rule-based algorithm**, not machine learning — exactly what our project requires.
 
 ---
 
-## 3. How We Calculate `focus_loss_minutes` (During Model Training)
+## 2. Inputs Required (From Backend)
+The backend sends these values to the AI module:
 
-When the system trains or updates the student's focus model, it uses their recent sessions:
+- `student_id` — the student being monitored  
+- `course_id` — optional (some students may have course-specific models)  
+- `elapsed_minutes` — how long the current study session has been running  
+- `focus_loss_minutes` — predicted time when the student usually begins losing focus  
+- `average_session_minutes` — backup estimate if `focus_loss_minutes` is unknown  
 
-### Data Checked Per Session:
+---
+
+## 3. How `focus_loss_minutes` Is Calculated (Training Phase)
+The AI calculates `focus_loss_minutes` by analyzing the student’s **recent study_sessions** (typically 10–30 sessions).
+
+### The system checks each session for:
 - `duration_minutes`  
-- `focus_rating` (1–5 scale)  
+- `focus_rating` (1–5)  
 - `mood_before → mood_after`  
 - `distractions` count  
-- time of day session started  
+- `session start time` (to evaluate hour-of-day performance)
 
-### How the AI detects focus drop:
-The system identifies the *approximate point* where performance decreases:
-- mood_after is lower than mood_before  
-- OR focus_rating drops below 3  
-- OR distractions increase later in the session  
+### Focus-loss point is detected when:
+- `mood_after < mood_before`  
+- OR `focus_rating` drops below 3  
+- OR distractions increase significantly at the end of the session  
 
-From these patterns, AI estimates a number such as:
+From this, the algorithm estimates the **average point of focus decline**, for example:
 
-
-This value is saved in `focus_models.focus_loss_minutes`.
+ 
+This is saved in the `focus_models` table under the student’s profile.
 
 ---
 
 ## 4. Real-Time Focus Warning Logic (75% Rule)
-
 During an active study session, the backend periodically sends:
 
 ```json
@@ -53,3 +50,11 @@ During an active study session, the backend periodically sends:
   "course_id": "INFO2413",
   "elapsed_minutes": 50
 }
+The AI calculates the warning threshold using:
+
+warning_threshold = focus_loss_minutes × 0.75
+
+If predicted focus-loss is 65 minutes:
+
+warning_threshold = 65 × 0.75 = 48.75 minutes
+
