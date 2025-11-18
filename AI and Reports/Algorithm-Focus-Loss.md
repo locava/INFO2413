@@ -54,35 +54,10 @@ During an active study session, the backend periodically sends:
   "elapsed_minutes": 50
 }
 
-warning_threshold = focus_loss_minutes × 0.75
 
-warning_threshold = 65 × 0.75 = 48.75 minutes
-
-
-{
-  "student_id": "123",
-  "course_id": "INFO2413",
-  "elapsed_minutes": 50,
-  "focus_loss_minutes": 65,
-  "threshold_minutes": 48.75,
-  "trigger_alert": true,
-  "reason": "Elapsed time passed 75% of predicted focus-loss point."
-}
-
-
-{
-  "trigger_alert": false
-}
-
-
-
----
-
-# 🎉 You're done!
-
-Paste that text into **Algorithm-Focus-Loss.md**, click **Commit**, and your AI folder is fully correct and ready for submission.
 
 If you want, I can check the other files too — just send me another screenshot.
+
 
 
 
