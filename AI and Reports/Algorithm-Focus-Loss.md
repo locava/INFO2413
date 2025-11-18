@@ -51,6 +51,9 @@ During an active study session, the backend periodically sends:
   "elapsed_minutes": 50
 }
 
+warning_threshold = focus_loss_minutes × 0.75
+
+warning_threshold = 65 × 0.75 = 48.75 minutes
 
 {
   "student_id": "123",
@@ -64,3 +67,4 @@ During an active study session, the backend periodically sends:
 {
   "trigger_alert": false
 }
+
