@@ -53,11 +53,3 @@ During an active study session, the backend periodically sends:
   "course_id": "INFO2413",
   "elapsed_minutes": 50
 }
-
-
-
-If you want, I can check the other files too — just send me another screenshot.
-
-
-
-
