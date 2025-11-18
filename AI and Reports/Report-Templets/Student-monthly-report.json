@@ -1,6 +1,6 @@
 {
   "report_type": "student_monthly",
-  "student_id": "example-student-id",
+  "student_id": "student-id",
   "month": "2025-11",
   "hours_per_week": [10, 14, 12, 8],
   "weekly_focus_scores": [78, 84, 80, 75],
@@ -14,3 +14,4 @@
     "Schedule short breaks every 45–60 minutes to avoid burnout."
   ]
 }
+
