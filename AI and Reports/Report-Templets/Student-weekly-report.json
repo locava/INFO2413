@@ -1,0 +1,32 @@
+{
+  "report_type": "student_weekly",
+  "student_id": "example-student-id",
+  "week_start": "2025-11-10",
+  "week_end": "2025-11-16",
+  "summary": {
+    "total_hours": 12,
+    "sessions_count": 10,
+    "average_session_minutes": 72,
+    "focus_score": 82
+  },
+  "by_day": [
+    { "date": "2025-11-10", "minutes": 120, "focus_score": 80 },
+    { "date": "2025-11-11", "minutes": 180, "focus_score": 85 },
+    { "date": "2025-11-12", "minutes": 60,  "focus_score": 75 },
+    { "date": "2025-11-13", "minutes": 90,  "focus_score": 83 },
+    { "date": "2025-11-14", "minutes": 60,  "focus_score": 78 }
+  ],
+  "top_courses": [
+    { "course_id": "INFO2413", "course_name": "Systems Analysis", "hours": 6 },
+    { "course_id": "MATH1234", "course_name": "Calculus I",      "hours": 3 }
+  ],
+  "distractions": {
+    "phone": 6,
+    "friends": 3,
+    "social_media": 4
+  },
+  "recommendations": [
+    "Your best focus window is 18:00–20:00. Try booking difficult tasks during this time.",
+    "Phone appears in many of your sessions. Consider leaving it outside the study area."
+  ]
+}
