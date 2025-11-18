@@ -50,7 +50,7 @@ During an active study session, the backend periodically sends:
   "course_id": "INFO2413",
   "elapsed_minutes": 50
 }
-warning_threshold = focus_loss_minutes × 0.75
+
 
 {
   "student_id": "123",
@@ -65,5 +65,13 @@ warning_threshold = focus_loss_minutes × 0.75
   "trigger_alert": false
 }
 
+
+
+---
+
+# 🎉 Done.  
+Just paste this entire block directly into `Algorithm-Focus-Loss.md` and commit.
+
+If you want, I can also combine **AI-Module-Design.md** into a single code block the same way.
 
 
