@@ -50,6 +50,7 @@ During an active study session, the backend periodically sends:
   "course_id": "INFO2413",
   "elapsed_minutes": 50
 }
+warning_threshold = focus_loss_minutes × 0.75
 
 {
   "student_id": "123",
@@ -63,5 +64,6 @@ During an active study session, the backend periodically sends:
 {
   "trigger_alert": false
 }
+
 
 
