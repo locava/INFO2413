@@ -1,6 +1,6 @@
 {
   "report_type": "instructor_summary",
-  "instructor_id": "example-instructor-id",
+  "instructor_id": "instructor-id-Jendy Wu",
   "course_id": "INFO2413",
   "course_name": "Systems Analysis and Design",
   "range": "weekly",
@@ -10,13 +10,13 @@
   "average_focus_score": 78,
   "students_at_risk": [
     {
-      "student_id": "stu01",
-      "display_name": "Alex",
+      "student_id": "100423492",
+      "display_name": "Emran",
       "reason": "Low weekly hours (<3h)"
     },
     {
-      "student_id": "stu02",
-      "display_name": "Bob",
+      "student_id": "100427823",
+      "display_name": "Divam",
       "reason": "Consistently low focus scores"
     }
   ],
@@ -31,4 +31,5 @@
     "Encourage students to avoid late-night cramming before deadlines."
   ]
 }
+
 
