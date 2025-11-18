@@ -1,0 +1,19 @@
+{
+  "report_type": "system_diagnostics",
+  "generated_at": "2025-11-16T03:00:00Z",
+  "ai_version": "1.0.0",
+  "models_trained": 132,
+  "last_training_run": "2025-11-16T02:30:00Z",
+  "alerts_last_7_days": 45,
+  "avg_focus_check_latency_ms": 120,
+  "notifications": {
+    "sent": 38,
+    "pending": 5,
+    "failed": 2
+  },
+  "data_quality": {
+    "sessions_with_missing_fields": 1,
+    "sessions_logged_last_7_days": 210
+  },
+  "notes": "AI and alert pipeline functioning normally. Monitor failed notifications for possible email configuration issues."
+}
