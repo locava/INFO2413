@@ -64,14 +64,3 @@ During an active study session, the backend periodically sends:
 {
   "trigger_alert": false
 }
-
-
-
----
-
-# 🎉 Done.  
-Just paste this entire block directly into `Algorithm-Focus-Loss.md` and commit.
-
-If you want, I can also combine **AI-Module-Design.md** into a single code block the same way.
-
-
