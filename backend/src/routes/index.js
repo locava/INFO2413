@@ -8,8 +8,9 @@ const router = express.Router();
 // Auth routes
 router.use('/auth', authRouter);
 
-// TODO: later
-// router.use('/student', studentRouter);
+const studentRouter = require('./student.routes');
+router.use('/student', studentRouter);
+
 // router.use('/instructor', instructorRouter);
 // router.use('/admin', adminRouter);
 // router.use('/alerts', alertsRouter);
