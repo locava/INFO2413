@@ -17,8 +17,8 @@
     { "date": "2025-11-14", "minutes": 60,  "focus_score": 78 }
   ],
   "top_courses": [
-    { "course_id": "INFO2413", "course_name": "Systems Analysis", "hours": 6 },
-    { "course_id": "MATH1234", "course_name": "Calculus I",      "hours": 3 }
+    { "course_id": "INFO2413", "course_name": "System Development Project", "hours": 6 },
+    { "course_id": "INFO2411", "course_name": "Foundations of Computer Security", "hours": 3 }
   ],
   "distractions": {
     "phone": 6,
@@ -30,4 +30,5 @@
     "Phone appears in many of your sessions. Consider leaving it outside the study area."
   ]
 }
+
 
