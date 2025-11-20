@@ -2,7 +2,7 @@
   "report_type": "instructor_summary",
   "instructor_id": "instructor-id-Jendy Wu",
   "course_id": "INFO2413",
-  "course_name": "Systems Analysis and Design",
+  "course_name": "System Development Project",
   "range": "weekly",
   "week_start": "2025-11-10",
   "week_end": "2025-11-16",
@@ -31,5 +31,6 @@
     "Encourage students to avoid late-night cramming before deadlines."
   ]
 }
+
 
 
