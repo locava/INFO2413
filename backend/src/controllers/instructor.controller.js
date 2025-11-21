@@ -1,52 +1,55 @@
-// src/controllers/instructor.controller.js
-const instructorService = require('../services/instructor.service');
-const { sendSuccess } = require('../utils/response');
+// backend/src/controllers/instructor.controller.js
 
-async function getInstructorCourses(req, res, next) {
-  try {
-    const instructorId = req.user.userId;
-    const courses = await instructorService.getCourses(instructorId);
+// Try to require from the queries folder. 
+// If you put your queries in 'src/db/queries', change this path to '../db/queries/instructor.queries'
+const instructorQueries = require('../db/queries/instructor.queries');
 
-    return sendSuccess(res, courses, 200);
-  } catch (err) {
-    next(err);
+const instructorController = {
+  // GET /api/instructor/courses
+  getCourses: async (req, res, next) => {
+    try {
+      // The user_id comes from the session (set by auth middleware)
+      const instructorId = req.session.user.user_id;
+      const courses = await instructorQueries.getInstructorCourses(instructorId);
+      
+      res.json({
+        success: true,
+        data: courses
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  // GET /api/instructor/course/:id/students
+  getStudents: async (req, res, next) => {
+    try {
+      const courseId = req.params.id;
+      const students = await instructorQueries.getCourseStudents(courseId);
+      
+      res.json({
+        success: true,
+        data: students
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  // GET /api/instructor/reports/course/:id
+  getCourseReport: async (req, res, next) => {
+    try {
+      const courseId = req.params.id;
+      const report = await instructorQueries.getCourseReport(courseId);
+      
+      res.json({
+        success: true,
+        data: report
+      });
+    } catch (error) {
+      next(error);
+    }
   }
-}
-
-async function getCourseStudents(req, res, next) {
-  try {
-    const instructorId = req.user.userId;
-    const courseId = req.params.id;
-
-    const students = await instructorService.getCourseStudents(
-      instructorId,
-      courseId
-    );
-
-    return sendSuccess(res, students, 200);
-  } catch (err) {
-    next(err);
-  }
-}
-
-async function getCourseReport(req, res, next) {
-  try {
-    const instructorId = req.user.userId;
-    const courseId = req.params.id;
-
-    const report = await instructorService.getCourseReport(
-      instructorId,
-      courseId
-    );
-
-    return sendSuccess(res, report, 200);
-  } catch (err) {
-    next(err);
-  }
-}
-
-module.exports = {
-  getInstructorCourses,
-  getCourseStudents,
-  getCourseReport,
 };
+
+module.exports = instructorController;

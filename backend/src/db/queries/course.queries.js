@@ -1,112 +1,66 @@
-// src/db/queries/course.queries.js
-const { query } = require('../../config/db');
+// backend/src/db/queries/course.queries.js
+const pool = require('../pool');
 
-// Used by instructors
-async function getCoursesByInstructor(instructorUserId) {
-  const res = await query(
-    `
-    SELECT c.*
-    FROM courses c
-    JOIN instructors i ON c.instructor_id = i.id
-    WHERE i.user_id = $1
-    `,
-    [instructorUserId]
-  );
-  return res.rows;
-}
+const courseQueries = {
+  createCourse: async (courseData) => {
+    // Schema check: "course_name", "course_code". Backend used "title", "code".
+    const { code, title, description, instructor_id } = courseData;
+    
+    // ✅ FIX: Map backend variables to Schema columns
+    const query = `
+      INSERT INTO courses (course_code, course_name, instructor_id, is_active)
+      VALUES ($1, $2, $3, true)
+      RETURNING *
+    `;
+    // Note: Schema has no 'description' column, so we skip saving it to avoid crash.
+    const result = await pool.query(query, [code, title, instructor_id]);
+    return result.rows[0];
+  },
 
-// Ensure an instructor really owns that course
-async function ensureInstructorOwnsCourse(instructorUserId, courseId) {
-  const res = await query(
-    `
-    SELECT 1
-    FROM courses c
-    JOIN instructors i ON c.instructor_id = i.id
-    WHERE c.id = $1
-      AND i.user_id = $2
-    `,
-    [courseId, instructorUserId]
-  );
+  getAllCourses: async () => {
+    // ✅ FIX: Use 'is_active' and correct column aliases
+    const query = `
+      SELECT c.course_id, c.course_code as code, c.course_name as title, 
+             u.name as instructor_name
+      FROM courses c
+      LEFT JOIN instructors i ON c.instructor_id = i.user_id
+      LEFT JOIN users u ON i.user_id = u.user_id
+      WHERE c.is_active = true
+      ORDER BY c.course_code ASC
+    `;
+    const result = await pool.query(query);
+    return result.rows;
+  },
 
-  if (res.rowCount === 0) {
-    const error = new Error('Unauthorized: course does not belong to this instructor');
-    error.status = 403;
-    throw error;
+  getCourseById: async (courseId) => {
+    const query = `SELECT * FROM courses WHERE course_id = $1 AND is_active = true`;
+    const result = await pool.query(query, [courseId]);
+    return result.rows[0];
+  },
+
+  updateCourse: async (courseId, data) => {
+    const { code, title } = data;
+    const query = `
+      UPDATE courses 
+      SET course_code = $1, course_name = $2
+      WHERE course_id = $3
+      RETURNING *
+    `;
+    const result = await pool.query(query, [code, title, courseId]);
+    return result.rows[0];
+  },
+
+  deleteCourse: async (courseId) => {
+    // ✅ FIX: Update 'is_active' instead of 'is_deleted'
+    const query = `
+      UPDATE courses 
+      SET is_active = false 
+      WHERE course_id = $1 
+      RETURNING course_id
+    `;
+    const result = await pool.query(query, [courseId]);
+    return result.rows[0];
   }
-}
-
-// ---- Admin operations ----
-
-// Create new course
-async function createCourse({
-  title,
-  code,
-  description,
-  instructorId, // instructors.id
-  term,
-  startDate,
-  endDate,
-}) {
-  const res = await query(
-    `
-    INSERT INTO courses (title, code, description, instructor_id, term, start_date, end_date)
-    VALUES ($1, $2, $3, $4, $5, $6, $7)
-    RETURNING *
-    `,
-    [title, code, description, instructorId, term, startDate, endDate]
-  );
-
-  return res.rows[0];
-}
-
-// Update existing course
-async function updateCourse(courseId, data) {
-  const {
-    title,
-    code,
-    description,
-    instructorId,
-    term,
-    startDate,
-    endDate,
-  } = data;
-
-  const res = await query(
-    `
-    UPDATE courses
-    SET
-      title = COALESCE($2, title),
-      code = COALESCE($3, code),
-      description = COALESCE($4, description),
-      instructor_id = COALESCE($5, instructor_id),
-      term = COALESCE($6, term),
-      start_date = COALESCE($7, start_date),
-      end_date = COALESCE($8, end_date)
-    WHERE id = $1
-    RETURNING *
-    `,
-    [courseId, title, code, description, instructorId, term, startDate, endDate]
-  );
-
-  return res.rows[0];
-}
-
-// Hard delete course (you can change to soft-delete if your schema supports it)
-async function deleteCourse(courseId) {
-  await query(
-    `
-    DELETE FROM courses
-    WHERE id = $1
-    `,
-    [courseId]
-  );
-  return true;
-}
-
-module.exports = {
-  getCoursesByInstructor,
-  ensureInstructorOwnsCourse,
-  createCourse,
-  updateCourse,
-  deleteCourse,
 };
+
+module.exports = courseQueries;

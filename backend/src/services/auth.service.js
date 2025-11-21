@@ -1,72 +1,41 @@
-// src/services/auth.service.js
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const { JWT_SECRET } = require('../config/env');
+// backend/src/services/auth.service.js
 const userQueries = require('../db/queries/user.queries');
+const bcrypt = require('bcrypt');
 
-async function login(email, password) {
-  const user = await userQueries.findUserByEmail(email);
+const authService = {
+  login: async (email, password) => {
+    // 1. Find the user
+    const user = await userQueries.findByEmail(email);
+    
+    if (!user) {
+      return null; // User not found
+    }
 
-  if (!user) {
-    const error = new Error('Invalid credentials');
-    error.status = 401;
-    throw error;
+    // 2. Compare Password
+    // 🔴 CRITICAL FIX: Use 'password_hash' (from DB) not 'password'
+    const isMatch = await bcrypt.compare(password, user.password_hash);
+    
+    if (!isMatch) {
+      return null; // Wrong password
+    }
+
+    // 3. Return user info (without the password hash)
+    // We separate the hash from the rest of the data
+    const { password_hash, ...userWithoutPassword } = user;
+    return userWithoutPassword;
+  },
+
+  register: async (userData) => {
+    // Check if user exists
+    const existingUser = await userQueries.findByEmail(userData.email);
+    if (existingUser) {
+      throw new Error('User already exists');
+    }
+    
+    // Create new user (hashing happens in userQueries.create now)
+    const newUser = await userQueries.create(userData);
+    return newUser;
   }
-
-  const passwordMatch = await bcrypt.compare(password, user.password_hash);
-
-  if (!passwordMatch) {
-    const error = new Error('Invalid credentials');
-    error.status = 401;
-    throw error;
-  }
-
-  const tokenPayload = {
-    userId: user.id,
-    role: user.role, // 'Student' | 'Instructor' | 'Administrator'
-  };
-
-  const token = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: '8h' });
-
-  // Don't send password hash to client
-  delete user.password_hash;
-
-  return {
-    token,
-    user,
-  };
-}
-
-async function registerStudent(data) {
-  const { name, email, password, studentNumber } = data;
-
-  const existing = await userQueries.findUserByEmail(email);
-  if (existing) {
-    const error = new Error('Email already in use');
-    error.status = 400;
-    throw error;
-  }
-
-  const hash = await bcrypt.hash(password, 10);
-
-  // create user record with role "Student"
-  const user = await userQueries.insertUser({
-    name,
-    email,
-    passwordHash: hash,
-    role: 'Student',
-  });
-
-  // create student record
-  await userQueries.insertStudent({
-    userId: user.id,
-    studentNumber,
-  });
-
-  return user;
-}
-
-module.exports = {
-  login,
-  registerStudent,
 };
+
+module.exports = authService;

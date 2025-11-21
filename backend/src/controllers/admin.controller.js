@@ -1,56 +1,60 @@
-// src/controllers/admin.controller.js
-const adminService = require('../services/admin.service');
-const { sendSuccess } = require('../utils/response');
+const userQueries = require('../db/queries/user.queries');
+const courseQueries = require('../db/queries/course.queries');
 
-// ---- Courses ----
-
-async function createCourse(req, res, next) {
+exports.getAllUsers = async (req, res, next) => {
   try {
-    const payload = req.body; // { title, code, description, instructorUserId, ... }
-    const course = await adminService.createCourse(payload);
-    return sendSuccess(res, course, 201);
-  } catch (err) {
-    next(err);
+    const { role } = req.query;
+    const users = await userQueries.getAllUsers(role);
+    res.json({ success: true, data: users });
+  } catch (error) {
+    next(error);
   }
-}
+};
 
-async function updateCourse(req, res, next) {
+exports.createUser = async (req, res, next) => {
   try {
-    const courseId = req.params.id;
-    const payload = req.body;
-    const course = await adminService.updateCourse(courseId, payload);
-    return sendSuccess(res, course, 200);
-  } catch (err) {
-    next(err);
+    // Simple wrapper around existing user create
+    const newUser = await userQueries.create(req.body);
+    res.status(201).json({ success: true, data: newUser });
+  } catch (error) {
+    next(error);
   }
-}
+};
 
-async function deleteCourse(req, res, next) {
+exports.deleteUser = async (req, res, next) => {
   try {
-    const courseId = req.params.id;
-    await adminService.deleteCourse(courseId);
-    return sendSuccess(res, { deleted: true }, 200);
-  } catch (err) {
-    next(err);
+    const { id } = req.params;
+    await userQueries.softDeleteUser(id);
+    res.json({ success: true, message: "User deactivated successfully" });
+  } catch (error) {
+    next(error);
   }
-}
+};
 
-// ---- Users ----
-
-async function createUser(req, res, next) {
+exports.getAllCourses = async (req, res, next) => {
   try {
-    const payload = req.body;
-    // expected: { name, email, password, role, instructorNumber?, department? }
-    const user = await adminService.createUser(payload);
-    return sendSuccess(res, user, 201);
-  } catch (err) {
-    next(err);
+    const courses = await courseQueries.getAllCourses();
+    res.json({ success: true, data: courses });
+  } catch (error) {
+    next(error);
   }
-}
+};
 
-module.exports = {
-  createCourse,
-  updateCourse,
-  deleteCourse,
-  createUser,
+exports.createCourse = async (req, res, next) => {
+  try {
+    const newCourse = await courseQueries.createCourse(req.body);
+    res.status(201).json({ success: true, data: newCourse });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.deleteCourse = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    await courseQueries.deleteCourse(id);
+    res.json({ success: true, message: "Course deleted successfully" });
+  } catch (error) {
+    next(error);
+  }
 };

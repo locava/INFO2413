@@ -1,28 +1,22 @@
-// src/routes/admin.routes.js
 const express = require('express');
-const adminController = require('../controllers/admin.controller');
-const { authenticateJWT } = require('../middleware/auth.middleware');
-const { requireRole } = require('../middleware/role.middleware');
-
 const router = express.Router();
+const adminController = require('../controllers/admin.controller');
+const { requireRole } = require('../middleware/auth.middleware');
 
-// All admin routes require: JWT + Administrator role
-router.use(authenticateJWT, requireRole('Administrator'));
+// Protect all routes - Admin Only
+router.use(requireRole('Administrator'));
 
-// ---- Courses ----
+// User Management
+router.get('/users', adminController.getAllUsers);
+router.post('/users', adminController.createUser);
+router.delete('/users/:id', adminController.deleteUser);
 
-// POST /api/admin/courses
+// Course Management
+router.get('/courses', adminController.getAllCourses);
 router.post('/courses', adminController.createCourse);
-
-// PUT /api/admin/courses/:id
-router.put('/courses/:id', adminController.updateCourse);
-
-// DELETE /api/admin/courses/:id
 router.delete('/courses/:id', adminController.deleteCourse);
 
-// ---- Users ----
-
-// POST /api/admin/users  (admin creates instructor/admin users)
-router.post('/users', adminController.createUser);
+// Placeholder for Thresholds (avoid 404s if frontend calls it)
+router.get('/thresholds', (req, res) => res.json({ success: true, data: [] }));
 
 module.exports = router;

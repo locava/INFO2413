@@ -1,21 +1,18 @@
-// src/routes/instructor.routes.js
 const express = require('express');
-const instructorController = require('../controllers/instructor.controller');
-const { authenticateJWT } = require('../middleware/auth.middleware');
-const { requireRole } = require('../middleware/role.middleware');
-
 const router = express.Router();
+const instructorController = require('../controllers/instructor.controller');
+const { requireRole } = require('../middleware/auth.middleware');
 
-// All instructor routes require: JWT + Instructor role
-router.use(authenticateJWT, requireRole('Instructor'));
+// Protect all routes - Instructor Only
+router.use(requireRole('Instructor'));
 
-// GET /api/instructor/courses
-router.get('/courses', instructorController.getInstructorCourses);
+// Get all courses for the logged-in instructor
+router.get('/courses', instructorController.getCourses);
 
-// GET /api/instructor/course/:id/students
-router.get('/course/:id/students', instructorController.getCourseStudents);
+// Get students for a specific course
+router.get('/course/:id/students', instructorController.getStudents);
 
-// GET /api/instructor/reports/course/:id
+// Get reports for a specific course
 router.get('/reports/course/:id', instructorController.getCourseReport);
 
 module.exports = router;
