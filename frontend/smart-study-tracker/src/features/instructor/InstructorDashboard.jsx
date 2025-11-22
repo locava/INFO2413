@@ -132,15 +132,15 @@ function InstructorDashboard() {
       ) : courseReport ? (
         <>
           {/* Privacy Notice */}
-          {courseReport.privacy_protected && (
+          {courseReport.privacy_notice && (
             <div className="privacy-notice">
-              <h3>🔒 Privacy Protection Active</h3>
-              <p>Detailed analytics are hidden because this course has fewer than 5 enrolled students.</p>
+              <h3>ℹ️ {courseReport.privacy_notice}</h3>
+              <p>Students enrolled: {courseReport.students_enrolled || 0}</p>
             </div>
           )}
 
           {/* Summary Cards */}
-          {!courseReport.privacy_protected && (
+          {courseReport.average_hours_per_student !== undefined && (
             <>
               <div className="summary-cards">
                 <div className="summary-card">
@@ -233,8 +233,19 @@ function InstructorDashboard() {
               )}
             </>
           )}
+
+          {/* No Data Message */}
+          {!courseReport.average_hours_per_student && courseReport.average_hours_per_student !== 0 && !courseReport.privacy_notice && (
+            <div className="empty-state">
+              <p>No study session data available for this course in the selected time period.</p>
+            </div>
+          )}
         </>
-      ) : null}
+      ) : (
+        <div className="empty-state">
+          <p>No report data available. Please select a course.</p>
+        </div>
+      )}
     </div>
   );
 }

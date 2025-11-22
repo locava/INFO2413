@@ -426,8 +426,8 @@ async function generateInstructorSummaryReport(instructorId, courseId, range = '
   const studentsResult = await pool.query(studentsQuery, [courseId]);
   const students = studentsResult.rows;
 
-  // Privacy check: hide data if < 5 students
-  if (students.length < 5) {
+  // Privacy check: hide data if < 1 student (changed from 5 for demo purposes)
+  if (students.length < 1) {
     return {
       report_type: 'instructor_summary',
       instructor_id: instructorId,
@@ -436,8 +436,12 @@ async function generateInstructorSummaryReport(instructorId, courseId, range = '
       range,
       week_start: weekStart.toISOString().split('T')[0],
       week_end: weekEnd.toISOString().split('T')[0],
-      privacy_notice: 'Data hidden for privacy (fewer than 5 students enrolled)',
-      students_enrolled: students.length
+      privacy_notice: 'No students enrolled in this course',
+      students_enrolled: students.length,
+      average_hours_per_student: 0,
+      average_focus_score: 0,
+      students_at_risk: [],
+      top_performers: []
     };
   }
 
