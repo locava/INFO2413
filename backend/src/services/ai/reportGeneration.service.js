@@ -600,7 +600,7 @@ async function generateSystemDiagnosticsReport() {
       status,
       COUNT(*) as count
     FROM notification_queue
-    WHERE created_at >= $1
+    WHERE enqueued_at >= $1
     GROUP BY status
   `;
   const notifResult = await pool.query(notifQuery, [sevenDaysAgo]);

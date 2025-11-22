@@ -70,11 +70,14 @@ function AdminDashboard() {
           <h1>System Administration</h1>
           <p className="page-subtitle">Welcome, {user?.name}</p>
         </div>
+        <button onClick={fetchData} className="btn-primary">
+          🔄 Refresh Data
+        </button>
       </div>
 
       {/* User Statistics */}
       <div className="summary-cards">
-        <div className="summary-card">
+        <div className="summary-card stat-primary">
           <div className="summary-icon">👥</div>
           <div className="summary-content">
             <h3>Total Users</h3>
@@ -83,7 +86,7 @@ function AdminDashboard() {
           </div>
         </div>
 
-        <div className="summary-card">
+        <div className="summary-card stat-success">
           <div className="summary-icon">🎓</div>
           <div className="summary-content">
             <h3>Students</h3>
@@ -92,12 +95,21 @@ function AdminDashboard() {
           </div>
         </div>
 
-        <div className="summary-card">
+        <div className="summary-card stat-info">
           <div className="summary-icon">👨‍🏫</div>
           <div className="summary-content">
             <h3>Instructors</h3>
             <p className="summary-value">{instructorCount}</p>
             <span className="summary-label">active</span>
+          </div>
+        </div>
+
+        <div className="summary-card stat-warning">
+          <div className="summary-icon">🔔</div>
+          <div className="summary-content">
+            <h3>Alerts (7d)</h3>
+            <p className="summary-value">{systemReport?.alerts_last_7_days || 0}</p>
+            <span className="summary-label">triggered</span>
           </div>
         </div>
       </div>
@@ -189,6 +201,58 @@ function AdminDashboard() {
           )}
         </>
       )}
+
+      {/* Users Management Table */}
+      <div className="card">
+        <div className="card-header">
+          <h2>👥 User Management</h2>
+          <span className="user-count">{users.length} total users</span>
+        </div>
+
+        {users.length > 0 ? (
+          <div className="table-container">
+            <table className="users-table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th>Status</th>
+                  <th>Joined</th>
+                </tr>
+              </thead>
+              <tbody>
+                {users.map(user => (
+                  <tr key={user.user_id}>
+                    <td className="user-name">
+                      <div className="user-avatar">
+                        {user.role === 'Student' ? '🎓' : user.role === 'Instructor' ? '👨‍🏫' : '👑'}
+                      </div>
+                      {user.name}
+                    </td>
+                    <td className="user-email">{user.email}</td>
+                    <td>
+                      <span className={`role-badge role-${user.role.toLowerCase()}`}>
+                        {user.role}
+                      </span>
+                    </td>
+                    <td>
+                      <span className={`status-badge status-${user.status.toLowerCase()}`}>
+                        {user.status}
+                      </span>
+                    </td>
+                    <td className="user-date">
+                      {user.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="no-data">No users found</p>
+        )}
+      </div>
     </div>
   );
 }
