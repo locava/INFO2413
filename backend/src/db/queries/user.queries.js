@@ -9,37 +9,32 @@ const userQueries = {
     return result.rows[0];
   },
 
+  // ✅ FIX 1: Select 'name' column, not 'first_name, last_name' (which don't exist)
   findUserById: async (id) => {
-    const query = `SELECT user_id, first_name, last_name, email, role FROM users WHERE user_id = $1`;
+    const query = `SELECT user_id, name, email, role, status FROM users WHERE user_id = $1`;
     const result = await pool.query(query, [id]);
     return result.rows[0];
   },
 
   create: async (userData) => {
-    // Note: Schema uses 'name', backend uses first/last.
-    // We will combine them for the DB insert to avoid crashes if the schema only has 'name'.
-    // If your schema DOES have first_name/last_name, keep it as is.
-    // Based on your schema file: "name varchar(120)"
+    const { name, first_name, last_name, email, password, role } = userData;
     
-    const { first_name, last_name, email, password, role } = userData;
-    const fullName = `${first_name} ${last_name}`; 
+    // ✅ FIX 2: Use 'name' if provided. If not, safely combine first/last.
+    // This prevents "undefined undefined".
+    const fullName = name || `${first_name || ''} ${last_name || ''}`.trim();
+    
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // ✅ FIX: Insert into 'name' column if first/last don't exist
-    // OR if your schema actually has first/last, swap this back.
-    // STRICTLY following the schema.sql you sent:
     const query = `
       INSERT INTO users (name, email, password_hash, role, status)
       VALUES ($1, $2, $3, $4, 'Active')
       RETURNING user_id, name, email, role
     `;
+    
     const result = await pool.query(query, [fullName, email, hashedPassword, role]);
     
-    // Split name back for the frontend response
-    const user = result.rows[0];
-    user.first_name = user.name.split(' ')[0];
-    user.last_name = user.name.split(' ').slice(1).join(' ');
-    return user;
+    // Return the user exactly as it is in the DB
+    return result.rows[0];
   },
 
   getAllUsers: async (roleFilter = null) => {
@@ -61,7 +56,6 @@ const userQueries = {
   },
 
   softDeleteUser: async (userId) => {
-    // ✅ FIX: Update 'status' instead of 'is_deleted'
     const query = `
       UPDATE users 
       SET status = 'Inactive' 
@@ -73,12 +67,13 @@ const userQueries = {
   },
 
   updateUser: async (userId, userData) => {
-    // Check if we need to combine names again (like in create)
-    const { first_name, last_name, email, role } = userData;
-    let fullName = userData.name;
-
-    if (first_name && last_name) {
-      fullName = `${first_name} ${last_name}`;
+    // Check if we have a single name or need to combine parts
+    const { name, first_name, last_name, email, role } = userData;
+    
+    // Prioritize the direct 'name', otherwise try to combine
+    let fullName = name;
+    if (!fullName && (first_name || last_name)) {
+      fullName = `${first_name || ''} ${last_name || ''}`.trim();
     }
 
     const query = `
@@ -90,11 +85,7 @@ const userQueries = {
     const result = await pool.query(query, [fullName, email, role, userId]);
     return result.rows[0];
   },
-
-  
 };
-
-
 
 // Aliases
 userQueries.createUser = userQueries.create;

@@ -2,11 +2,21 @@
 const pool = require('../pool');
 
 const instructorQueries = {
+  // ✅ NEW: Used by Dropdowns (Student & Admin)
+  getAllCourses: async () => {
+    const query = `
+      SELECT * FROM courses 
+      ORDER BY course_code ASC
+    `;
+    const result = await pool.query(query);
+    return result.rows;
+  },
+
   // Used by: Instructor Dashboard (Get my courses)
   getCoursesByInstructorId: async (userId) => {
     const query = `
       SELECT * FROM courses 
-      WHERE instructor_id = $1 AND is_deleted = false
+      WHERE instructor_id = $1
       ORDER BY course_code ASC
     `;
     const result = await pool.query(query, [userId]);
@@ -33,7 +43,6 @@ const instructorQueries = {
 
   // Used by: Instructor Reports (Get aggregate data)
   getCourseStats: async (courseId) => {
-    // Placeholder for basic stats (count of students)
     const query = `
       SELECT COUNT(*) as student_count 
       FROM enrollments 
@@ -43,5 +52,10 @@ const instructorQueries = {
     return result.rows[0];
   }
 };
+
+// ✅ FIX: Create the missing alias
+// The controller asks for 'getInstructorCourses', so we point it to 'getAllCourses'
+// This ensures Students see ALL courses in the dropdown.
+instructorQueries.getInstructorCourses = instructorQueries.getAllCourses;
 
 module.exports = instructorQueries;

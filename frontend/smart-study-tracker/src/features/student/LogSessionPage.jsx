@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { studentAPI } from '../../services/api';
+// ✅ FIX 1: Import instructorAPI to fetch courses
+import { studentAPI, instructorAPI } from '../../services/api';
 import Input from '../../components/ui/Input';
 import Select from '../../components/ui/Select';
 import Textarea from '../../components/ui/Textarea';
@@ -48,15 +49,23 @@ function LogSessionPage() {
     'fatigue'
   ];
 
+  // ✅ FIX 2: Fetch courses from Database instead of hardcoding
   useEffect(() => {
-    // In a real app, fetch courses from API
-    // For now, use hardcoded courses matching seed data
-    setCourses([
-      { course_id: '550e8400-e29b-41d4-a716-446655440001', course_name: 'Database Systems', course_code: 'INFO2413' },
-      { course_id: '550e8400-e29b-41d4-a716-446655440002', course_name: 'Web Development', course_code: 'INFO3410' },
-      { course_id: '550e8400-e29b-41d4-a716-446655440003', course_name: 'Data Structures', course_code: 'COMP2103' },
-      { course_id: '550e8400-e29b-41d4-a716-446655440004', course_name: 'Algorithms', course_code: 'COMP3105' }
-    ]);
+    const fetchCourses = async () => {
+      try {
+        // We use the existing endpoint to get courses
+        const response = await instructorAPI.getCourses();
+        
+        if (response.success) {
+          setCourses(response.data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch courses:", error);
+        // Optional: Handle error (e.g. show a toast notification)
+      }
+    };
+
+    fetchCourses();
   }, []);
 
   const handleChange = (e) => {
@@ -65,7 +74,6 @@ function LogSessionPage() {
       ...prev,
       [name]: value
     }));
-    // Clear error for this field when user starts typing
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,
@@ -106,7 +114,6 @@ function LogSessionPage() {
     setSuccessMessage('');
 
     try {
-      // Combine date and time into a proper timestamp
       const startTimeISO = `${formData.date}T${formData.startTime}:00`;
 
       const sessionData = {
@@ -123,7 +130,6 @@ function LogSessionPage() {
       if (response.success) {
         setSuccessMessage('✅ Study session logged successfully!');
 
-        // Clear form
         setFormData({
           courseId: '',
           date: new Date().toISOString().split('T')[0],
@@ -133,7 +139,6 @@ function LogSessionPage() {
           distractions: ''
         });
 
-        // Redirect to dashboard after 2 seconds
         setTimeout(() => {
           navigate('/student/dashboard');
         }, 2000);
@@ -182,7 +187,10 @@ function LogSessionPage() {
               name="courseId"
               value={formData.courseId}
               onChange={handleChange}
-              options={courses.map(c => ({ value: c.course_id, label: `${c.course_code} - ${c.course_name}` }))}
+              options={courses.map(c => ({ 
+                  value: c.course_id, 
+                  label: c.course_code ? `${c.course_code} - ${c.course_name}` : c.course_name 
+              }))}
               placeholder="Select a course"
               required
               error={errors.courseId}
@@ -265,4 +273,3 @@ function LogSessionPage() {
 }
 
 export default LogSessionPage;
-
