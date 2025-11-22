@@ -1,4 +1,4 @@
-# AI & Reports Module – Overview (Person 4)
+# AI & Reports Module – Overview
 
 This folder contains all documentation for the **AI logic, focus-loss prediction, and reporting system** used in the Smart Study & Productivity Tracker.  
 As Person 4, my role is **design**, not coding — meaning I define how the AI works so the backend and frontend teams can integrate it later.
@@ -37,3 +37,4 @@ This documentation ensures:
 - **Professor** sees a complete AI system design  
 
 This module prepares the system so AI logic can be implemented in the next phase.
+
