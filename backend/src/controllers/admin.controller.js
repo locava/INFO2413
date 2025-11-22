@@ -1,12 +1,11 @@
 // backend/src/controllers/admin.controller.js
 const userQueries = require('../db/queries/user.queries');
-const courseQueries = require('../db/queries/course.queries'); // You will need this for Part 2
+const courseQueries = require('../db/queries/course.queries');
 
 const adminController = {
   // 1. User Management
   getAllUsers: async (req, res, next) => {
     try {
-      // Allow filtering by role (e.g., ?role=Instructor)
       const roleFilter = req.query.role;
       const users = await userQueries.getAllUsers(roleFilter);
       res.json({ success: true, data: users });
@@ -17,7 +16,6 @@ const adminController = {
 
   createUser: async (req, res, next) => {
     try {
-      // req.body contains { first_name, last_name, email, password, role }
       const newUser = await userQueries.create(req.body);
       res.status(201).json({ success: true, data: newUser });
     } catch (error) {
@@ -43,7 +41,6 @@ const adminController = {
   deleteUser: async (req, res, next) => {
     try {
       const userId = req.params.id;
-      // This calls your softDeleteUser function
       const deletedUser = await userQueries.softDeleteUser(userId);
       
       if (!deletedUser) {
@@ -59,7 +56,6 @@ const adminController = {
   // 2. Course Management (Placeholders for Part 2)
   getAllCourses: async (req, res, next) => {
     try {
-      // We will build courseQueries.getAllCourses in the next step
       const courses = await courseQueries.getAllCourses(); 
       res.json({ success: true, data: courses });
     } catch (error) {
@@ -84,7 +80,49 @@ const adminController = {
     } catch (error) {
       next(error);
     }
+  },
+
+
+  // 3. System Thresholds
+  getThresholds: async (req, res, next) => {
+    try {
+      const thresholds = await require('../db/queries/threshold.queries').getAllThresholds();
+      res.json({ success: true, data: thresholds });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  updateThreshold: async (req, res, next) => {
+    try {
+      const { id } = req.params;
+      const { value } = req.body;
+      
+      const updated = await require('../db/queries/threshold.queries').updateThreshold(id, value);
+      
+      if (!updated) {
+        return res.status(404).json({ success: false, message: "Threshold not found" });
+      }
+
+      res.json({ success: true, data: updated });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  // 4. System Reports
+  getSystemReports: async (req, res, next) => {
+    try {
+      // Import inline or at top
+      const reportQueries = require('../db/queries/report.queries'); 
+      const stats = await reportQueries.getSystemStats();
+      res.json({ success: true, data: stats });
+    } catch (error) {
+      next(error);
+    }
   }
+
+
 };
 
 module.exports = adminController;

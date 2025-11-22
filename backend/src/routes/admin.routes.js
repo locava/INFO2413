@@ -17,7 +17,11 @@ router.get('/courses', adminController.getAllCourses);
 router.post('/courses', adminController.createCourse);
 router.delete('/courses/:id', adminController.deleteCourse);
 
-// Placeholder for Thresholds (avoid 404s if frontend calls it)
-router.get('/thresholds', (req, res) => res.json({ success: true, data: [] }));
+// System Thresholds
+router.get('/thresholds', adminController.getThresholds);
+router.put('/thresholds/:id', adminController.updateThreshold);
+
+// System Reports
+router.get('/reports', adminController.getSystemReports);
 
 module.exports = router;
