@@ -1,13 +1,13 @@
 const pool = require('../pool');
 
-async function createStudySession({ studentId, courseId, startTime, endTime, mood, distractions }) {
+async function createStudySession({ studentId, courseId, date, startTime, durationMinutes, mood, distractions }) {
   const res = await pool.query(
     `
-    INSERT INTO study_sessions (student_id, course_id, start_time, end_time, mood, distractions)
-    VALUES ($1, $2, $3, $4, $5, $6)
+    INSERT INTO study_sessions (student_id, course_id, date, start_time, duration_minutes, mood, distractions)
+    VALUES ($1, $2, $3, $4, $5, $6, $7)
     RETURNING *
     `,
-    [studentId, courseId, startTime, endTime, mood, distractions]
+    [studentId, courseId, date, startTime, durationMinutes, mood, distractions]
   );
   return res.rows[0];
 }
@@ -15,24 +15,29 @@ async function createStudySession({ studentId, courseId, startTime, endTime, moo
 async function getStudySessionsByStudent(studentId) {
   const res = await pool.query(
     `
-    SELECT * FROM study_sessions
-    WHERE student_id = $1 AND is_deleted = false
-    ORDER BY start_time DESC
+    SELECT
+      ss.*,
+      c.course_name,
+      c.course_code
+    FROM study_sessions ss
+    LEFT JOIN courses c ON ss.course_id = c.course_id
+    WHERE ss.student_id = $1 AND ss.is_deleted = false
+    ORDER BY ss.date DESC, ss.start_time DESC
     `,
     [studentId]
   );
   return res.rows;
 }
 
-async function updateStudySession({ studentId, sessionId, startTime, endTime, mood, distractions }) {
+async function updateStudySession({ studentId, sessionId, date, startTime, durationMinutes, mood, distractions }) {
   const res = await pool.query(
     `
     UPDATE study_sessions
-    SET start_time = $3, end_time = $4, mood = $5, distractions = $6
+    SET date = $3, start_time = $4, duration_minutes = $5, mood = $6, distractions = $7
     WHERE session_id = $1 AND student_id = $2
     RETURNING *
     `,
-    [sessionId, studentId, startTime, endTime, mood, distractions]
+    [sessionId, studentId, date, startTime, durationMinutes, mood, distractions]
   );
   return res.rows[0];
 }

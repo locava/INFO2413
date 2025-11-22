@@ -1,14 +1,86 @@
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
+import { aiAPI, studentAPI } from '../../services/api';
 import './DashboardPage.css';
 
 function DashboardPage() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [weeklyReport, setWeeklyReport] = useState(null);
+  const [sessions, setSessions] = useState([]);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (user) {
+      fetchDashboardData();
+    }
+  }, [user]);
+
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Fetch weekly report and recent sessions in parallel
+      const [reportResponse, sessionsResponse] = await Promise.all([
+        aiAPI.getWeeklyReport(user.user_id),
+        studentAPI.getSessions()
+      ]);
+
+      if (reportResponse.success) {
+        setWeeklyReport(reportResponse.data);
+      }
+
+      if (sessionsResponse.success) {
+        setSessions(sessionsResponse.data);
+      }
+    } catch (err) {
+      console.error('Dashboard data fetch error:', err);
+      setError('Failed to load dashboard data. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="dashboard-page">
+        <div className="loading-state">
+          <div className="spinner"></div>
+          <p>Loading your dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="dashboard-page">
+        <div className="error-state">
+          <p>{error}</p>
+          <button onClick={fetchDashboardData} className="btn-primary">Retry</button>
+        </div>
+      </div>
+    );
+  }
+
+  const summary = weeklyReport?.summary || {
+    total_hours: 0,
+    sessions_count: 0,
+    average_session_minutes: 0,
+    focus_score: 0
+  };
+
   return (
     <div className="dashboard-page">
       <div className="dashboard-header">
         <div>
           <h1>Dashboard</h1>
-          <p className="page-subtitle">Welcome back! Here's your study overview</p>
+          <p className="page-subtitle">Welcome back, {user?.name}! Here's your study overview</p>
         </div>
-        <button className="btn-primary">
+        <button className="btn-primary" onClick={() => navigate('/student/log-session')}>
           <span>📝</span>
           <span>Quick Log Session</span>
         </button>
@@ -19,8 +91,8 @@ function DashboardPage() {
           <div className="stat-icon">⏱️</div>
           <div className="stat-content">
             <h3>Total Study Time</h3>
-            <p className="stat-value">24.5 hrs</p>
-            <span className="stat-change positive">+12% from last week</span>
+            <p className="stat-value">{summary.total_hours} hrs</p>
+            <span className="stat-change neutral">This week</span>
           </div>
         </div>
 
@@ -28,26 +100,27 @@ function DashboardPage() {
           <div className="stat-icon">📚</div>
           <div className="stat-content">
             <h3>Sessions Completed</h3>
-            <p className="stat-value">18</p>
-            <span className="stat-change positive">+3 this week</span>
+            <p className="stat-value">{summary.sessions_count}</p>
+            <span className="stat-change neutral">This week</span>
           </div>
         </div>
 
         <div className="stat-card stat-warning">
           <div className="stat-icon">🎯</div>
           <div className="stat-content">
-            <h3>Goals Achieved</h3>
-            <p className="stat-value">7/10</p>
-            <span className="stat-change neutral">70% completion</span>
+            <h3>Avg Session Length</h3>
+            <p className="stat-value">{summary.average_session_minutes} min</p>
+            <span className="stat-change neutral">Per session</span>
           </div>
         </div>
 
         <div className="stat-card stat-info">
           <div className="stat-icon">🔥</div>
           <div className="stat-content">
-            <h3>Current Streak</h3>
-            <p className="stat-value">5 days</p>
-            <span className="stat-change positive">Keep it up!</span>
+            <h3>Focus Score</h3>
+            <p className="stat-value">{summary.focus_score}%</p>
+            <span className={`stat-change ${summary.focus_score >= 75 ? 'positive' : 'neutral'}`}>
+              {summary.focus_score >= 75 ? 'Great focus!' : 'Keep improving!'}</span>
           </div>
         </div>
       </div>
@@ -56,143 +129,126 @@ function DashboardPage() {
         <div className="card recent-sessions">
           <div className="card-header">
             <h2>Recent Sessions</h2>
-            <a href="#" className="view-all">View All →</a>
+            <button onClick={() => navigate('/student/reports')} className="view-all">View All →</button>
           </div>
           <div className="sessions-list">
-            <div className="session-item">
-              <div className="session-subject">
-                <span className="subject-icon" style={{background: 'linear-gradient(135deg, #667eea, #764ba2)'}}>M</span>
-                <div>
-                  <h4>Mathematics</h4>
-                  <p>Calculus - Integration</p>
-                </div>
+            {sessions.length === 0 ? (
+              <div className="empty-state">
+                <p>No study sessions yet. Start logging your sessions!</p>
+                <button onClick={() => navigate('/student/log-session')} className="btn-secondary">
+                  Log Your First Session
+                </button>
               </div>
-              <div className="session-meta">
-                <span className="session-duration">2h 30m</span>
-                <span className="session-date">Today</span>
-              </div>
-            </div>
+            ) : (
+              sessions.slice(0, 5).map((session, index) => {
+                const hours = Math.floor(session.duration_minutes / 60);
+                const minutes = session.duration_minutes % 60;
+                const durationText = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
 
-            <div className="session-item">
-              <div className="session-subject">
-                <span className="subject-icon" style={{background: 'linear-gradient(135deg, #f093fb, #f5576c)'}}>P</span>
-                <div>
-                  <h4>Physics</h4>
-                  <p>Quantum Mechanics</p>
-                </div>
-              </div>
-              <div className="session-meta">
-                <span className="session-duration">1h 45m</span>
-                <span className="session-date">Yesterday</span>
-              </div>
-            </div>
+                const sessionDate = new Date(session.date);
+                const today = new Date();
+                const diffDays = Math.floor((today - sessionDate) / (1000 * 60 * 60 * 24));
+                let dateText = 'Today';
+                if (diffDays === 1) dateText = 'Yesterday';
+                else if (diffDays > 1) dateText = `${diffDays} days ago`;
 
-            <div className="session-item">
-              <div className="session-subject">
-                <span className="subject-icon" style={{background: 'linear-gradient(135deg, #4facfe, #00f2fe)'}}>C</span>
-                <div>
-                  <h4>Chemistry</h4>
-                  <p>Organic Chemistry</p>
-                </div>
-              </div>
-              <div className="session-meta">
-                <span className="session-duration">3h 15m</span>
-                <span className="session-date">2 days ago</span>
-              </div>
-            </div>
+                const colors = [
+                  'linear-gradient(135deg, #667eea, #764ba2)',
+                  'linear-gradient(135deg, #f093fb, #f5576c)',
+                  'linear-gradient(135deg, #4facfe, #00f2fe)',
+                  'linear-gradient(135deg, #43e97b, #38f9d7)',
+                  'linear-gradient(135deg, #fa709a, #fee140)'
+                ];
+
+                return (
+                  <div key={session.session_id} className="session-item">
+                    <div className="session-subject">
+                      <span className="subject-icon" style={{background: colors[index % colors.length]}}>
+                        {session.course_name?.charAt(0) || 'S'}
+                      </span>
+                      <div>
+                        <h4>{session.course_name || 'Study Session'}</h4>
+                        <p>{session.mood || 'No mood recorded'}</p>
+                      </div>
+                    </div>
+                    <div className="session-meta">
+                      <span className="session-duration">{durationText}</span>
+                      <span className="session-date">{dateText}</span>
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
         </div>
 
         <div className="card productivity-chart">
           <div className="card-header">
             <h2>Weekly Productivity</h2>
-            <select className="chart-filter">
-              <option>This Week</option>
-              <option>Last Week</option>
-              <option>This Month</option>
-            </select>
           </div>
           <div className="chart-placeholder">
-            <div className="bar-chart">
-              <div className="bar" style={{height: '60%'}}>
-                <span className="bar-label">Mon</span>
-                <span className="bar-value">3h</span>
+            {weeklyReport?.by_day && weeklyReport.by_day.length > 0 ? (
+              <div className="bar-chart">
+                {weeklyReport.by_day.map((day, index) => {
+                  const hours = (day.minutes / 60).toFixed(1);
+                  const maxMinutes = Math.max(...weeklyReport.by_day.map(d => d.minutes), 1);
+                  const heightPercent = (day.minutes / maxMinutes) * 100;
+                  const dayName = new Date(day.date).toLocaleDateString('en-US', { weekday: 'short' });
+
+                  return (
+                    <div key={index} className="bar" style={{height: `${heightPercent}%`}}>
+                      <span className="bar-label">{dayName}</span>
+                      <span className="bar-value">{hours}h</span>
+                    </div>
+                  );
+                })}
               </div>
-              <div className="bar" style={{height: '80%'}}>
-                <span className="bar-label">Tue</span>
-                <span className="bar-value">4h</span>
+            ) : (
+              <div className="empty-chart">
+                <p>No study data for this week yet</p>
               </div>
-              <div className="bar" style={{height: '45%'}}>
-                <span className="bar-label">Wed</span>
-                <span className="bar-value">2h</span>
-              </div>
-              <div className="bar" style={{height: '90%'}}>
-                <span className="bar-label">Thu</span>
-                <span className="bar-value">4.5h</span>
-              </div>
-              <div className="bar" style={{height: '70%'}}>
-                <span className="bar-label">Fri</span>
-                <span className="bar-value">3.5h</span>
-              </div>
-              <div className="bar" style={{height: '55%'}}>
-                <span className="bar-label">Sat</span>
-                <span className="bar-value">2.5h</span>
-              </div>
-              <div className="bar" style={{height: '85%'}}>
-                <span className="bar-label">Sun</span>
-                <span className="bar-value">4h</span>
-              </div>
-            </div>
+            )}
           </div>
         </div>
       </div>
 
-      <div className="card goals-section">
-        <div className="card-header">
-          <h2>Active Goals</h2>
-          <button className="btn-secondary">+ Add Goal</button>
-        </div>
-        <div className="goals-list">
-          <div className="goal-item">
-            <div className="goal-info">
-              <h4>Complete Calculus Course</h4>
-              <p>Study 20 hours this month</p>
-            </div>
-            <div className="goal-progress">
-              <div className="progress-bar">
-                <div className="progress-fill" style={{width: '75%'}}></div>
-              </div>
-              <span className="progress-text">15/20 hours</span>
-            </div>
+      {/* AI Recommendations Section */}
+      {weeklyReport?.recommendations && weeklyReport.recommendations.length > 0 && (
+        <div className="card recommendations-card">
+          <div className="card-header">
+            <h2>🤖 AI Recommendations</h2>
           </div>
-
-          <div className="goal-item">
-            <div className="goal-info">
-              <h4>Master Quantum Physics</h4>
-              <p>Complete 10 practice problems</p>
-            </div>
-            <div className="goal-progress">
-              <div className="progress-bar">
-                <div className="progress-fill" style={{width: '40%'}}></div>
+          <div className="recommendations-list">
+            {weeklyReport.recommendations.map((rec, index) => (
+              <div key={index} className="recommendation-item">
+                <span className="rec-icon">💡</span>
+                <p>{rec}</p>
               </div>
-              <span className="progress-text">4/10 problems</span>
-            </div>
-          </div>
-
-          <div className="goal-item">
-            <div className="goal-info">
-              <h4>Maintain Study Streak</h4>
-              <p>Study every day for 30 days</p>
-            </div>
-            <div className="goal-progress">
-              <div className="progress-bar">
-                <div className="progress-fill" style={{width: '17%'}}></div>
-              </div>
-              <span className="progress-text">5/30 days</span>
-            </div>
+            ))}
           </div>
         </div>
-      </div>
+      )}
+
+      {/* Top Courses Section */}
+      {weeklyReport?.top_courses && weeklyReport.top_courses.length > 0 && (
+        <div className="card top-courses-card">
+          <div className="card-header">
+            <h2>📚 Top Courses This Week</h2>
+          </div>
+          <div className="top-courses-list">
+            {weeklyReport.top_courses.slice(0, 3).map((course, index) => (
+              <div key={index} className="course-item">
+                <div className="course-rank">#{index + 1}</div>
+                <div className="course-info">
+                  <h4>{course.course_name}</h4>
+                  <p>{course.course_id}</p>
+                </div>
+                <div className="course-hours">{course.hours.toFixed(1)}h</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

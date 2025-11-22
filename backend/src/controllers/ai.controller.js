@@ -83,6 +83,63 @@ const aiController = {
   },
 
   /**
+   * GET /api/ai/reports/monthly/:studentId
+   * Generate monthly report for a student
+   */
+  generateMonthlyReport: async (req, res, next) => {
+    try {
+      const { studentId } = req.params;
+      const { month } = req.query; // Format: YYYY-MM
+
+      const report = await aiService.generateStudentMonthlyReport(studentId, month);
+
+      res.json({ success: true, data: report });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  /**
+   * GET /api/ai/reports/instructor/:courseId
+   * Generate instructor summary report for a course
+   */
+  generateInstructorReport: async (req, res, next) => {
+    try {
+      const { courseId } = req.params;
+      const { range, weekStart } = req.query;
+
+      // Get instructor ID from session
+      const instructorId = req.session.user.user_id;
+
+      const weekStartDate = weekStart ? new Date(weekStart) : null;
+      const report = await aiService.generateInstructorSummaryReport(
+        instructorId,
+        courseId,
+        range || 'weekly',
+        weekStartDate
+      );
+
+      res.json({ success: true, data: report });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  /**
+   * GET /api/ai/reports/system
+   * Generate system diagnostics report (admin only)
+   */
+  generateSystemReport: async (req, res, next) => {
+    try {
+      const report = await aiService.generateSystemDiagnosticsReport();
+
+      res.json({ success: true, data: report });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  /**
    * POST /api/ai/monitoring/start
    * Start monitoring a study session
    */

@@ -1,4 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
+import { studentAPI } from '../../services/api';
 import Input from '../../components/ui/Input';
 import Select from '../../components/ui/Select';
 import Textarea from '../../components/ui/Textarea';
@@ -6,21 +9,55 @@ import Button from '../../components/ui/Button';
 import './LogSessionPage.css';
 
 function LogSessionPage() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
-    course: '',
+    courseId: '',
     date: new Date().toISOString().split('T')[0],
     startTime: '',
-    duration: '',
+    durationMinutes: '',
     mood: '',
-    distractions: '',
-    notes: ''
+    distractions: ''
   });
 
+  const [courses, setCourses] = useState([]);
   const [errors, setErrors] = useState({});
   const [successMessage, setSuccessMessage] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const courseOptions = ['Mathematics', 'Physics', 'Computer Science', 'Chemistry', 'Biology', 'Literature', 'History'];
-  const moodOptions = ['Focused', 'Neutral', 'Tired', 'Stressed'];
+  // Mood options matching the database seed data
+  const moodOptions = [
+    'Very Productive',
+    'Productive',
+    'Focused',
+    'Neutral',
+    'Tired',
+    'Distracted',
+    'Stressed'
+  ];
+
+  // Common distractions
+  const distractionOptions = [
+    'phone',
+    'social_media',
+    'noise',
+    'internet',
+    'other_people',
+    'hunger',
+    'fatigue'
+  ];
+
+  useEffect(() => {
+    // In a real app, fetch courses from API
+    // For now, use hardcoded courses matching seed data
+    setCourses([
+      { course_id: '550e8400-e29b-41d4-a716-446655440001', course_name: 'Database Systems', course_code: 'INFO2413' },
+      { course_id: '550e8400-e29b-41d4-a716-446655440002', course_name: 'Web Development', course_code: 'INFO3410' },
+      { course_id: '550e8400-e29b-41d4-a716-446655440003', course_name: 'Data Structures', course_code: 'COMP2103' },
+      { course_id: '550e8400-e29b-41d4-a716-446655440004', course_name: 'Algorithms', course_code: 'COMP3105' }
+    ]);
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -40,8 +77,8 @@ function LogSessionPage() {
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.course) {
-      newErrors.course = 'Course is required';
+    if (!formData.courseId) {
+      newErrors.courseId = 'Course is required';
     }
     if (!formData.date) {
       newErrors.date = 'Date is required';
@@ -49,39 +86,67 @@ function LogSessionPage() {
     if (!formData.startTime) {
       newErrors.startTime = 'Start time is required';
     }
-    if (!formData.duration || formData.duration <= 0) {
-      newErrors.duration = 'Duration must be greater than 0';
+    if (!formData.durationMinutes || formData.durationMinutes <= 0) {
+      newErrors.durationMinutes = 'Duration must be greater than 0';
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (validateForm()) {
-      console.log('New session:', formData);
-
-      // Show success message
-      setSuccessMessage('Session saved (demo). Backend integration coming next.');
-
-      // Clear form
-      setFormData({
-        course: '',
-        date: new Date().toISOString().split('T')[0],
-        startTime: '',
-        duration: '',
-        mood: '',
-        distractions: '',
-        notes: ''
-      });
-
-      // Clear success message after 3 seconds
-      setTimeout(() => {
-        setSuccessMessage('');
-      }, 3000);
+    if (!validateForm()) {
+      return;
     }
+
+    setLoading(true);
+    setErrors({});
+    setSuccessMessage('');
+
+    try {
+      // Combine date and time into a proper timestamp
+      const startTimeISO = `${formData.date}T${formData.startTime}:00`;
+
+      const sessionData = {
+        courseId: formData.courseId,
+        date: formData.date,
+        startTime: startTimeISO,
+        durationMinutes: parseInt(formData.durationMinutes),
+        mood: formData.mood || null,
+        distractions: formData.distractions || null
+      };
+
+      const response = await studentAPI.createSession(sessionData);
+
+      if (response.success) {
+        setSuccessMessage('✅ Study session logged successfully!');
+
+        // Clear form
+        setFormData({
+          courseId: '',
+          date: new Date().toISOString().split('T')[0],
+          startTime: '',
+          durationMinutes: '',
+          mood: '',
+          distractions: ''
+        });
+
+        // Redirect to dashboard after 2 seconds
+        setTimeout(() => {
+          navigate('/student/dashboard');
+        }, 2000);
+      }
+    } catch (error) {
+      setErrors({ submit: error.message || 'Failed to log session. Please try again.' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCancel = () => {
+    navigate('/student/dashboard');
   };
 
   return (
@@ -105,16 +170,22 @@ function LogSessionPage() {
             </div>
           )}
 
+          {errors.submit && (
+            <div className="error-message">
+              ❌ {errors.submit}
+            </div>
+          )}
+
           <form className="session-form" onSubmit={handleSubmit}>
             <Select
-              label="Course"
-              name="course"
-              value={formData.course}
+              label="Course *"
+              name="courseId"
+              value={formData.courseId}
               onChange={handleChange}
-              options={courseOptions}
+              options={courses.map(c => ({ value: c.course_id, label: `${c.course_code} - ${c.course_name}` }))}
               placeholder="Select a course"
               required
-              error={errors.course}
+              error={errors.courseId}
             />
 
             <div className="form-row">
@@ -140,47 +211,52 @@ function LogSessionPage() {
             </div>
 
             <Input
-              label="Duration (minutes)"
-              name="duration"
+              label="Duration (minutes) *"
+              name="durationMinutes"
               type="number"
-              value={formData.duration}
+              value={formData.durationMinutes}
               onChange={handleChange}
               placeholder="e.g., 60"
               min="1"
               required
-              error={errors.duration}
+              error={errors.durationMinutes}
             />
 
             <Select
-              label="Mood"
+              label="Mood (optional)"
               name="mood"
               value={formData.mood}
               onChange={handleChange}
-              options={moodOptions}
+              options={moodOptions.map(m => ({ value: m, label: m }))}
               placeholder="How did you feel?"
             />
 
             <Textarea
-              label="Distractions"
+              label="Distractions (optional)"
               name="distractions"
               value={formData.distractions}
               onChange={handleChange}
-              placeholder="Any distractions during the session? (optional)"
+              placeholder="e.g., phone, social_media, noise (comma-separated)"
               rows={3}
             />
 
-            <Textarea
-              label="Notes"
-              name="notes"
-              value={formData.notes}
-              onChange={handleChange}
-              placeholder="What did you learn? Any key takeaways? (optional)"
-              rows={4}
-            />
-
-            <Button type="submit" variant="primary" fullWidth>
-              Save Session
-            </Button>
+            <div className="form-actions">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={handleCancel}
+                disabled={loading}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                variant="primary"
+                disabled={loading}
+              >
+                {loading ? 'Saving...' : 'Save Session'}
+              </Button>
+            </div>
           </form>
         </div>
       </div>

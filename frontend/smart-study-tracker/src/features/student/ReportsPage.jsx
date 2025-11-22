@@ -1,247 +1,362 @@
-import { useState, useMemo } from 'react';
-import { mockStudySessions } from './mockData';
+import { useState, useEffect } from 'react';
+import { useAuth } from '../../context/AuthContext';
+import { aiAPI } from '../../services/api';
 import Select from '../../components/ui/Select';
 import './Reports.css';
 
 function ReportsPage() {
-  const [filters, setFilters] = useState({
-    range: 'This Week',
-    course: 'All Courses',
-    mood: 'All Moods'
+  const { user } = useAuth();
+  const [reportType, setReportType] = useState('weekly');
+  const [weeklyReport, setWeeklyReport] = useState(null);
+  const [monthlyReport, setMonthlyReport] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   });
 
-  // Get unique courses and moods from data
-  const uniqueCourses = useMemo(() => {
-    const courses = [...new Set(mockStudySessions.map(s => s.course))];
-    return ['All Courses', ...courses];
-  }, []);
+  useEffect(() => {
+    fetchReports();
+  }, [reportType, selectedMonth, user]);
 
-  const uniqueMoods = useMemo(() => {
-    const moods = [...new Set(mockStudySessions.map(s => s.mood))];
-    return ['All Moods', ...moods];
-  }, []);
+  const fetchReports = async () => {
+    if (!user) return;
 
-  // Filter sessions based on selected filters
-  const filteredSessions = useMemo(() => {
-    let filtered = [...mockStudySessions];
+    setLoading(true);
+    setError(null);
 
-    // Filter by course
-    if (filters.course !== 'All Courses') {
-      filtered = filtered.filter(s => s.course === filters.course);
-    }
-
-    // Filter by mood
-    if (filters.mood !== 'All Moods') {
-      filtered = filtered.filter(s => s.mood === filters.mood);
-    }
-
-    // Filter by date range
-    const today = new Date();
-    const getDateDaysAgo = (days) => {
-      const date = new Date();
-      date.setDate(date.getDate() - days);
-      return date;
-    };
-
-    if (filters.range === 'This Week') {
-      const weekAgo = getDateDaysAgo(7);
-      filtered = filtered.filter(s => new Date(s.date) >= weekAgo);
-    } else if (filters.range === 'Last Week') {
-      const twoWeeksAgo = getDateDaysAgo(14);
-      const weekAgo = getDateDaysAgo(7);
-      filtered = filtered.filter(s => {
-        const date = new Date(s.date);
-        return date >= twoWeeksAgo && date < weekAgo;
-      });
-    } else if (filters.range === 'This Month') {
-      const monthAgo = getDateDaysAgo(30);
-      filtered = filtered.filter(s => new Date(s.date) >= monthAgo);
-    }
-
-    return filtered;
-  }, [filters]);
-
-  // Calculate summary statistics
-  const summary = useMemo(() => {
-    const totalMinutes = filteredSessions.reduce((sum, s) => sum + s.duration, 0);
-    const sessionCount = filteredSessions.length;
-    const avgDuration = sessionCount > 0 ? Math.round(totalMinutes / sessionCount) : 0;
-
-    return {
-      totalMinutes,
-      sessionCount,
-      avgDuration
-    };
-  }, [filteredSessions]);
-
-  // Calculate minutes per course for visualization
-  const minutesPerCourse = useMemo(() => {
-    const courseMap = {};
-    filteredSessions.forEach(session => {
-      if (!courseMap[session.course]) {
-        courseMap[session.course] = 0;
+    try {
+      if (reportType === 'weekly') {
+        const response = await aiAPI.getWeeklyReport(user.user_id);
+        if (response.success) {
+          setWeeklyReport(response.data);
+        }
+      } else {
+        const response = await aiAPI.getMonthlyReport(user.user_id, selectedMonth);
+        if (response.success) {
+          setMonthlyReport(response.data);
+        }
       }
-      courseMap[session.course] += session.duration;
-    });
-    return Object.entries(courseMap).map(([course, minutes]) => ({
-      course,
-      minutes
-    }));
-  }, [filteredSessions]);
-
-  const maxMinutes = Math.max(...minutesPerCourse.map(c => c.minutes), 1);
-
-  const handleFilterChange = (e) => {
-    const { name, value } = e.target;
-    setFilters(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    } catch (err) {
+      setError(err.message || 'Failed to load reports');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  const handleReportTypeChange = (e) => {
+    setReportType(e.target.value);
   };
+
+  const handleMonthChange = (e) => {
+    setSelectedMonth(e.target.value);
+  };
+
+  if (loading) {
+    return (
+      <div className="reports-page">
+        <div className="page-header">
+          <h1>Study Reports</h1>
+        </div>
+        <div className="loading-state" style={{ textAlign: 'center', padding: '60px 20px' }}>
+          <div className="spinner" style={{
+            width: '40px',
+            height: '40px',
+            border: '4px solid #f3f3f3',
+            borderTop: '4px solid #6366f1',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite',
+            margin: '0 auto 20px'
+          }}></div>
+          <p>Loading your reports...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="reports-page">
+        <div className="page-header">
+          <h1>Study Reports</h1>
+        </div>
+        <div className="error-state" style={{
+          textAlign: 'center',
+          padding: '60px 20px',
+          color: '#c33'
+        }}>
+          <p>❌ {error}</p>
+          <button onClick={fetchReports} style={{
+            marginTop: '20px',
+            padding: '10px 20px',
+            backgroundColor: '#6366f1',
+            color: 'white',
+            border: 'none',
+            borderRadius: '8px',
+            cursor: 'pointer'
+          }}>
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const currentReport = reportType === 'weekly' ? weeklyReport : monthlyReport;
 
   return (
     <div className="reports-page">
       <div className="page-header">
         <div>
           <h1>Study Reports</h1>
-          <p className="page-subtitle">Analyze your study patterns and track your progress</p>
+          <p className="page-subtitle">AI-powered insights into your study patterns</p>
         </div>
       </div>
 
-      {/* Filter Bar */}
+      {/* Report Type Selector */}
       <div className="filter-bar">
         <Select
-          label="Time Range"
-          name="range"
-          value={filters.range}
-          onChange={handleFilterChange}
-          options={['This Week', 'Last Week', 'This Month']}
+          label="Report Type"
+          name="reportType"
+          value={reportType}
+          onChange={handleReportTypeChange}
+          options={[
+            { value: 'weekly', label: 'Weekly Report' },
+            { value: 'monthly', label: 'Monthly Report' }
+          ]}
         />
-        <Select
-          label="Course"
-          name="course"
-          value={filters.course}
-          onChange={handleFilterChange}
-          options={uniqueCourses}
-        />
-        <Select
-          label="Mood"
-          name="mood"
-          value={filters.mood}
-          onChange={handleFilterChange}
-          options={uniqueMoods}
-        />
-      </div>
-
-      {/* Summary Cards */}
-      <div className="summary-cards">
-        <div className="summary-card">
-          <div className="summary-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="10"></circle>
-              <polyline points="12 6 12 12 16 14"></polyline>
-            </svg>
+        {reportType === 'monthly' && (
+          <div className="form-group">
+            <label htmlFor="month">Select Month</label>
+            <input
+              type="month"
+              id="month"
+              value={selectedMonth}
+              onChange={handleMonthChange}
+              style={{
+                padding: '10px',
+                borderRadius: '8px',
+                border: '1px solid #ddd',
+                fontSize: '14px'
+              }}
+            />
           </div>
-          <div className="summary-content">
-            <h3>Total Minutes</h3>
-            <p className="summary-value">{summary.totalMinutes}</p>
-            <span className="summary-label">minutes</span>
-          </div>
-        </div>
-
-        <div className="summary-card">
-          <div className="summary-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
-            </svg>
-          </div>
-          <div className="summary-content">
-            <h3>Sessions</h3>
-            <p className="summary-value">{summary.sessionCount}</p>
-            <span className="summary-label">completed</span>
-          </div>
-        </div>
-
-        <div className="summary-card">
-          <div className="summary-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="12" y1="20" x2="12" y2="10"></line>
-              <line x1="18" y1="20" x2="18" y2="4"></line>
-              <line x1="6" y1="20" x2="6" y2="16"></line>
-            </svg>
-          </div>
-          <div className="summary-content">
-            <h3>Average Duration</h3>
-            <p className="summary-value">{summary.avgDuration}</p>
-            <span className="summary-label">minutes</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Minutes per Course Visualization */}
-      <div className="card visualization-card">
-        <h2>Study Time by Course</h2>
-        <div className="bar-chart">
-          {minutesPerCourse.length > 0 ? (
-            minutesPerCourse.map(({ course, minutes }) => (
-              <div key={course} className="bar-item">
-                <div className="bar-label">{course}</div>
-                <div className="bar-container">
-                  <div
-                    className="bar-fill"
-                    style={{ width: `${(minutes / maxMinutes) * 100}%` }}
-                  >
-                    <span className="bar-value">{minutes} min</span>
-                  </div>
-                </div>
-              </div>
-            ))
-          ) : (
-            <p className="no-data">No data available for the selected filters</p>
-          )}
-        </div>
-      </div>
-
-      {/* Sessions Table */}
-      <div className="card sessions-table-card">
-        <h2>Session Details</h2>
-        {filteredSessions.length > 0 ? (
-          <div className="sessions-table-wrapper">
-            <table className="sessions-table">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Course</th>
-                  <th>Duration</th>
-                  <th>Mood</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredSessions.map(session => (
-                  <tr key={session.id}>
-                    <td>{formatDate(session.date)}</td>
-                    <td>{session.course}</td>
-                    <td>{session.duration} min</td>
-                    <td>
-                      <span className={`mood-badge mood-${session.mood.toLowerCase()}`}>
-                        {session.mood}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <p className="no-data">No sessions found for the selected filters</p>
         )}
       </div>
+
+      {/* Weekly Report */}
+      {reportType === 'weekly' && weeklyReport && (
+        <>
+          {/* Summary Cards */}
+          <div className="summary-cards">
+            <div className="summary-card">
+              <div className="summary-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+              </div>
+              <div className="summary-content">
+                <h3>Total Hours</h3>
+                <p className="summary-value">{weeklyReport.summary.total_hours.toFixed(1)}</p>
+                <span className="summary-label">hours this week</span>
+              </div>
+            </div>
+
+            <div className="summary-card">
+              <div className="summary-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                  <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                </svg>
+              </div>
+              <div className="summary-content">
+                <h3>Sessions</h3>
+                <p className="summary-value">{weeklyReport.summary.sessions_count}</p>
+                <span className="summary-label">completed</span>
+              </div>
+            </div>
+
+            <div className="summary-card">
+              <div className="summary-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="12" y1="20" x2="12" y2="10"></line>
+                  <line x1="18" y1="20" x2="18" y2="4"></line>
+                  <line x1="6" y1="20" x2="6" y2="16"></line>
+                </svg>
+              </div>
+              <div className="summary-content">
+                <h3>Focus Score</h3>
+                <p className="summary-value">{weeklyReport.summary.focus_score}</p>
+                <span className="summary-label">out of 100</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Daily Breakdown */}
+          <div className="card visualization-card">
+            <h2>Daily Study Time</h2>
+            <div className="bar-chart">
+              {weeklyReport.by_day && weeklyReport.by_day.length > 0 ? (
+                weeklyReport.by_day.map((day) => (
+                  <div key={day.date} className="bar-item">
+                    <div className="bar-label">{new Date(day.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</div>
+                    <div className="bar-container">
+                      <div
+                        className="bar-fill"
+                        style={{ width: `${(day.minutes / Math.max(...weeklyReport.by_day.map(d => d.minutes), 1)) * 100}%` }}
+                      >
+                        <span className="bar-value">{day.minutes} min (Focus: {day.focus_score})</span>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="no-data">No study sessions this week</p>
+              )}
+            </div>
+          </div>
+
+          {/* Top Courses */}
+          <div className="card">
+            <h2>Top Courses</h2>
+            <div className="bar-chart">
+              {weeklyReport.top_courses && weeklyReport.top_courses.length > 0 ? (
+                weeklyReport.top_courses.map((course) => (
+                  <div key={course.course_id} className="bar-item">
+                    <div className="bar-label">{course.course_name}</div>
+                    <div className="bar-container">
+                      <div
+                        className="bar-fill"
+                        style={{ width: `${(course.hours / Math.max(...weeklyReport.top_courses.map(c => c.hours), 1)) * 100}%` }}
+                      >
+                        <span className="bar-value">{course.hours.toFixed(1)} hours</span>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="no-data">No course data available</p>
+              )}
+            </div>
+          </div>
+
+          {/* Distractions */}
+          {weeklyReport.distractions && Object.keys(weeklyReport.distractions).length > 0 && (
+            <div className="card">
+              <h2>Common Distractions</h2>
+              <div className="distractions-list">
+                {Object.entries(weeklyReport.distractions).map(([distraction, count]) => (
+                  <div key={distraction} className="distraction-item">
+                    <span className="distraction-name">{distraction}</span>
+                    <span className="distraction-count">{count} times</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* AI Recommendations */}
+          {weeklyReport.recommendations && weeklyReport.recommendations.length > 0 && (
+            <div className="card">
+              <h2>🤖 AI Recommendations</h2>
+              <ul className="recommendations-list">
+                {weeklyReport.recommendations.map((rec, index) => (
+                  <li key={index}>{rec}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Monthly Report */}
+      {reportType === 'monthly' && monthlyReport && (
+        <>
+          <div className="card">
+            <h2>Monthly Overview - {monthlyReport.month}</h2>
+            <div className="monthly-stats">
+              <p><strong>Trend:</strong> {monthlyReport.trend}</p>
+              <p><strong>Mood Trend:</strong> {monthlyReport.mood_trend}</p>
+            </div>
+          </div>
+
+          {/* Weekly Hours */}
+          <div className="card visualization-card">
+            <h2>Hours Per Week</h2>
+            <div className="bar-chart">
+              {monthlyReport.hours_per_week && monthlyReport.hours_per_week.map((hours, index) => (
+                <div key={index} className="bar-item">
+                  <div className="bar-label">Week {index + 1}</div>
+                  <div className="bar-container">
+                    <div
+                      className="bar-fill"
+                      style={{ width: `${(hours / Math.max(...monthlyReport.hours_per_week, 1)) * 100}%` }}
+                    >
+                      <span className="bar-value">{hours} hours</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Weekly Focus Scores */}
+          <div className="card visualization-card">
+            <h2>Weekly Focus Scores</h2>
+            <div className="bar-chart">
+              {monthlyReport.weekly_focus_scores && monthlyReport.weekly_focus_scores.map((score, index) => (
+                <div key={index} className="bar-item">
+                  <div className="bar-label">Week {index + 1}</div>
+                  <div className="bar-container">
+                    <div
+                      className="bar-fill"
+                      style={{ width: `${score}%`, backgroundColor: score >= 75 ? '#10b981' : score >= 50 ? '#f59e0b' : '#ef4444' }}
+                    >
+                      <span className="bar-value">{score}/100</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Common Distractions */}
+          {monthlyReport.common_distractions && monthlyReport.common_distractions.length > 0 && (
+            <div className="card">
+              <h2>Common Distractions This Month</h2>
+              <div className="distractions-list">
+                {monthlyReport.common_distractions.map((distraction, index) => (
+                  <div key={index} className="distraction-item">
+                    <span className="distraction-name">{distraction}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Monthly Recommendations */}
+          {monthlyReport.recommendations && monthlyReport.recommendations.length > 0 && (
+            <div className="card">
+              <h2>🤖 AI Recommendations</h2>
+              <ul className="recommendations-list">
+                {monthlyReport.recommendations.map((rec, index) => (
+                  <li key={index}>{rec}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Notes */}
+          {monthlyReport.notes && (
+            <div className="card">
+              <h2>Analysis Notes</h2>
+              <p>{monthlyReport.notes}</p>
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }

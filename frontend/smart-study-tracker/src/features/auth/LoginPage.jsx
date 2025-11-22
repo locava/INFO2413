@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import './LoginPage.css';
@@ -6,10 +7,49 @@ function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleLogin = (e) => {
+  const [formData, setFormData] = useState({
+    email: '',
+    password: ''
+  });
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.id]: e.target.value
+    });
+    setError(''); // Clear error when user types
+  };
+
+  const handleLogin = async (e) => {
     e.preventDefault();
-    login();
-    navigate('/student/dashboard');
+    setError('');
+    setLoading(true);
+
+    try {
+      const result = await login(formData.email, formData.password);
+
+      if (result.success) {
+        // Redirect based on user role
+        const role = result.user.role;
+        if (role === 'Student') {
+          navigate('/student/dashboard');
+        } else if (role === 'Instructor') {
+          navigate('/instructor/dashboard');
+        } else if (role === 'Administrator') {
+          navigate('/admin/dashboard');
+        } else {
+          navigate('/student/dashboard'); // Default fallback
+        }
+      } else {
+        setError(result.error || 'Login failed. Please check your credentials.');
+      }
+    } catch (err) {
+      setError('An error occurred. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -71,14 +111,30 @@ function LoginPage() {
               <p>Sign in to continue your learning journey</p>
             </div>
 
+            {error && (
+              <div className="error-message" style={{
+                padding: '12px',
+                marginBottom: '16px',
+                backgroundColor: '#fee',
+                color: '#c33',
+                borderRadius: '8px',
+                fontSize: '14px'
+              }}>
+                ❌ {error}
+              </div>
+            )}
+
             <form onSubmit={handleLogin} className="login-form">
               <div className="form-group">
                 <label htmlFor="email">Email Address</label>
                 <input
                   type="email"
                   id="email"
-                  placeholder="student@example.com"
-                  defaultValue="student@example.com"
+                  placeholder="alice@example.com"
+                  value={formData.email}
+                  onChange={handleChange}
+                  required
+                  disabled={loading}
                 />
               </div>
 
@@ -88,12 +144,15 @@ function LoginPage() {
                   type="password"
                   id="password"
                   placeholder="••••••••"
-                  defaultValue="password123"
+                  value={formData.password}
+                  onChange={handleChange}
+                  required
+                  disabled={loading}
                 />
               </div>
 
-              <button type="submit" className="btn-primary login-btn">
-                Sign In
+              <button type="submit" className="btn-primary login-btn" disabled={loading}>
+                {loading ? 'Signing In...' : 'Sign In'}
               </button>
             </form>
 

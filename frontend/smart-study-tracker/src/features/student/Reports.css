@@ -239,6 +239,92 @@
   color: var(--white);
 }
 
+/* Distractions List */
+.distractions-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.distraction-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.625rem 1rem;
+  background: var(--gray-100);
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+}
+
+.distraction-name {
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-right: 0.5rem;
+}
+
+.distraction-count {
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+/* Recommendations List */
+.recommendations-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.recommendations-list li {
+  padding: 1rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: var(--radius-md);
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  box-shadow: 0 2px 4px rgba(102, 126, 234, 0.2);
+}
+
+.recommendations-list li::before {
+  content: "💡 ";
+  margin-right: 0.5rem;
+}
+
+/* Monthly Stats */
+.monthly-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.monthly-stats p {
+  margin: 0;
+  padding: 0.75rem;
+  background: var(--gray-100);
+  border-radius: var(--radius-md);
+  font-size: 0.9375rem;
+}
+
+.monthly-stats strong {
+  color: var(--text-primary);
+  margin-right: 0.5rem;
+}
+
+/* Form Group for Month Selector */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-group label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
 /* Mobile Optimization */
 @media (max-width: 750px) {
   .reports-page {

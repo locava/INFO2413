@@ -31,6 +31,15 @@ router.post('/focus-model/:studentId', aiController.buildFocusModel);
 // GET /api/ai/reports/weekly/:studentId - Generate weekly report
 router.get('/reports/weekly/:studentId', aiController.generateWeeklyReport);
 
+// GET /api/ai/reports/monthly/:studentId - Generate monthly report
+router.get('/reports/monthly/:studentId', aiController.generateMonthlyReport);
+
+// GET /api/ai/reports/instructor/:courseId - Generate instructor summary
+router.get('/reports/instructor/:courseId', requireRole('Instructor'), aiController.generateInstructorReport);
+
+// GET /api/ai/reports/system - Generate system diagnostics (admin only)
+router.get('/reports/system', requireRole('Administrator'), aiController.generateSystemReport);
+
 // ============================================
 // SESSION MONITORING
 // ============================================

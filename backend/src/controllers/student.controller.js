@@ -4,7 +4,7 @@ const { sendSuccess } = require('../utils/response');
 
 async function createStudySession(req, res, next) {
   try {
-    const studentId = req.user.userId;
+    const studentId = req.session.user.user_id;
     const payload = req.body;
 
     const session = await studySessionService.createSession(studentId, payload);
@@ -17,7 +17,7 @@ async function createStudySession(req, res, next) {
 
 async function getStudySessions(req, res, next) {
   try {
-    const studentId = req.user.userId;
+    const studentId = req.session.user.user_id;
 
     const sessions = await studySessionService.getSessionsByStudent(studentId);
 
@@ -29,7 +29,7 @@ async function getStudySessions(req, res, next) {
 
 async function updateStudySession(req, res, next) {
   try {
-    const studentId = req.user.userId;
+    const studentId = req.session.user.user_id;
     const sessionId = req.params.id;
     const payload = req.body;
 
@@ -47,7 +47,7 @@ async function updateStudySession(req, res, next) {
 
 async function softDeleteStudySession(req, res, next) {
   try {
-    const studentId = req.user.userId;
+    const studentId = req.session.user.user_id;
     const sessionId = req.params.id;
 
     await studySessionService.softDeleteSession(studentId, sessionId);

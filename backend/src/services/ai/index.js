@@ -17,6 +17,9 @@ module.exports = {
 
   // Report Generation
   generateStudentWeeklyReport: reportGeneration.generateStudentWeeklyReport,
+  generateStudentMonthlyReport: reportGeneration.generateStudentMonthlyReport,
+  generateInstructorSummaryReport: reportGeneration.generateInstructorSummaryReport,
+  generateSystemDiagnosticsReport: reportGeneration.generateSystemDiagnosticsReport,
   saveReport: reportGeneration.saveReport,
 
   // Focus Monitoring
