@@ -11,7 +11,8 @@ async function apiRequest(endpoint, options = {}) {
       'Content-Type': 'application/json',
       ...options.headers,
     },
-    credentials: 'include', // Important for session cookies
+    // ✅ THE CHANGE: 'include' sends the cookie automatically
+    credentials: 'include', 
   };
 
   try {

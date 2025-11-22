@@ -1,3 +1,4 @@
+// frontend/smart-study-tracker/src/context/AuthContext.jsx
 import { createContext, useContext, useState, useEffect } from 'react';
 import { authAPI } from '../services/api';
 
@@ -7,19 +8,20 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Check if user is already logged in on mount
   useEffect(() => {
     checkAuth();
   }, []);
 
   const checkAuth = async () => {
     try {
+      // ✅ Just ask the API. The cookie sends automatically.
       const response = await authAPI.getCurrentUser();
       if (response.success) {
         setUser(response.data);
       }
     } catch (error) {
-      console.log('Not authenticated');
+      // If 401, it just means we aren't logged in. No error needed.
+      console.log("User not logged in");
     } finally {
       setLoading(false);
     }
@@ -29,9 +31,11 @@ export function AuthProvider({ children }) {
     try {
       const response = await authAPI.login(email, password);
       if (response.success) {
-        setUser(response.data.user);
-        return { success: true };
+        // ✅ Update state. No need to save token.
+        setUser(response.data);
+        return { success: true, user: response.data };
       }
+      return { success: false, error: "Login failed" };
     } catch (error) {
       return { success: false, error: error.message };
     }
@@ -39,11 +43,11 @@ export function AuthProvider({ children }) {
 
   const logout = async () => {
     try {
-      await authAPI.logout();
+      await authAPI.logout(); // Backend destroys session
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
-      setUser(null);
+      setUser(null); // Clear local state
     }
   };
 
@@ -61,4 +65,3 @@ export function useAuth() {
   }
   return context;
 }
-

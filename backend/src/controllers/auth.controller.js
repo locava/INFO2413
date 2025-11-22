@@ -1,4 +1,5 @@
 // backend/src/controllers/auth.controller.js
+const jwt = require('jsonwebtoken');
 const authService = require('../services/auth.service');
 
 exports.register = async (req, res, next) => {
@@ -30,15 +31,16 @@ exports.login = async (req, res, next) => {
       });
     }
 
-    // ✅ CRITICAL FIX: Save user to session
+    // ✅ THE CHANGE: Save user to Session (This sets the Cookie automatically)
     req.session.user = user;
     
-    // ✅ CRITICAL FIX: Send the user data in the response
+    // ✅ Send simple response (No token needed)
     res.json({
       success: true,
       message: 'Login successful',
       data: user
     });
+
   } catch (error) {
     next(error);
   }
