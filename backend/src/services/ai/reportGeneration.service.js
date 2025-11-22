@@ -164,7 +164,7 @@ async function generateStudentWeeklyReport(studentId, weekStart = null) {
   // Get focus model for recommendations
   const focusModel = await getFocusModel(studentId);
 
-  // Generate recommendations based on patterns
+  // Generate smart AI recommendations based on patterns
   const recommendations = [];
 
   // Peak hour recommendation
@@ -172,25 +172,66 @@ async function generateStudentWeeklyReport(studentId, weekStart = null) {
   if (patterns.peakStudyHours && patterns.peakStudyHours.length > 0) {
     const peakHour = patterns.peakStudyHours[0].hour;
     recommendations.push(
-      `Your best focus window is ${peakHour}:00–${peakHour + 2}:00. Try booking difficult tasks during this time.`
+      `⭐ Your peak focus window is ${peakHour}:00–${peakHour + 2}:00. Schedule your most challenging subjects during this time for maximum retention.`
     );
   }
 
-  // Distraction recommendation
+  // Study time recommendations with emojis
+  const weeklyGoal = 600; // 10 hours
+  if (totalStudyTime < 300) { // Less than 5 hours
+    recommendations.push('📚 Aim for 5-7 hours of weekly study time to improve retention and understanding.');
+  } else if (totalStudyTime < weeklyGoal) {
+    recommendations.push(
+      `🎯 You're ${Math.round((weeklyGoal - totalStudyTime) / 60)} hours away from your ${Math.round(weeklyGoal / 60)}-hour weekly goal. You can do it!`
+    );
+  } else if (totalStudyTime > 1200) { // More than 20 hours
+    recommendations.push('⚠️ You\'re studying over 20 hours/week. Remember to take breaks to avoid burnout!');
+  } else {
+    recommendations.push('✅ Excellent study time balance! You\'re hitting the sweet spot for effective learning.');
+  }
+
+  // Focus score recommendations
+  if (focusScore < 50) {
+    recommendations.push('🎯 Focus Alert: Try the Pomodoro Technique (25 min focus + 5 min break) to boost concentration.');
+  } else if (focusScore < 70) {
+    recommendations.push('💡 Good focus! Eliminate your top distraction to reach peak performance (75%+).');
+  } else if (focusScore >= 85) {
+    recommendations.push('🔥 Outstanding focus score! You\'re in the top 10% of students. Keep it up!');
+  } else {
+    recommendations.push('👍 Great focus! You\'re maintaining excellent concentration levels.');
+  }
+
+  // Distraction-specific recommendations
   const topDistraction = Object.entries(distractionCounts)
     .sort((a, b) => b[1] - a[1])[0];
   if (topDistraction && topDistraction[1] >= 3) {
-    recommendations.push(
-      `${topDistraction[0].charAt(0).toUpperCase() + topDistraction[0].slice(1)} appears in many of your sessions. Consider strategies to minimize this distraction.`
-    );
+    const distractionTips = {
+      'phone': '📱 Put your phone in another room or use app blockers during study time.',
+      'social_media': '🚫 Use website blockers like Freedom or Cold Turkey during study sessions.',
+      'noise': '🎧 Try noise-cancelling headphones or study in a quieter location.',
+      'fatigue': '😴 Ensure 7-8 hours of sleep and study during your peak energy hours.',
+      'hunger': '🍎 Have healthy snacks ready before starting your study session.',
+      'other': '🎯 Identify your main distraction and create a specific plan to minimize it.'
+    };
+    const distractionName = topDistraction[0].toLowerCase();
+    const tip = distractionTips[distractionName] || distractionTips['other'];
+    recommendations.push(`${tip} (${topDistraction[0]} occurred ${topDistraction[1]}x this week)`);
   }
 
-  // Study time recommendation
-  const weeklyGoal = 600; // 10 hours
-  if (totalStudyTime < weeklyGoal) {
-    recommendations.push(
-      `Try to reach ${Math.round(weeklyGoal / 60)} hours per week to stay on track with your goals.`
-    );
+  // Session duration recommendations
+  if (averageSessionDuration < 25) {
+    recommendations.push('⏱️ Your sessions are quite short. Try 45-60 minute blocks for deeper learning.');
+  } else if (averageSessionDuration > 120) {
+    recommendations.push('🧠 Long sessions detected. Break them into 60-90 min chunks with 10-15 min breaks.');
+  } else {
+    recommendations.push('✨ Perfect session length! 45-90 minutes is ideal for deep work.');
+  }
+
+  // Consistency recommendations
+  if (byDayArray.filter(d => d.minutes > 0).length < 3) {
+    recommendations.push('📅 Study at least 3-4 days per week for better consistency and retention.');
+  } else if (byDayArray.filter(d => d.minutes > 0).length >= 5) {
+    recommendations.push('🌟 Excellent consistency! Studying 5+ days/week builds strong habits.');
   }
 
   // Build report matching Student-weekly-report.json template

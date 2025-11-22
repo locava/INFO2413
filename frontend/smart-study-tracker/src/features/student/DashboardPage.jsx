@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { aiAPI, studentAPI } from '../../services/api';
+import { WeeklyStudyChart, FocusScoreChart } from '../../components/charts/StudyCharts';
 import './DashboardPage.css';
 
 function DashboardPage() {
@@ -204,28 +205,29 @@ function DashboardPage() {
 
         <div className="card productivity-chart">
           <div className="card-header">
-            <h2>Weekly Productivity</h2>
+            <h2>📊 Weekly Study Time</h2>
           </div>
-          <div className="chart-placeholder">
+          <div className="chart-container">
             {weeklyReport?.by_day && weeklyReport.by_day.length > 0 ? (
-              <div className="bar-chart">
-                {weeklyReport.by_day.map((day, index) => {
-                  const hours = (day.minutes / 60).toFixed(1);
-                  const maxMinutes = Math.max(...weeklyReport.by_day.map(d => d.minutes), 1);
-                  const heightPercent = (day.minutes / maxMinutes) * 100;
-                  const dayName = new Date(day.date).toLocaleDateString('en-US', { weekday: 'short' });
-
-                  return (
-                    <div key={index} className="bar" style={{height: `${heightPercent}%`}}>
-                      <span className="bar-label">{dayName}</span>
-                      <span className="bar-value">{hours}h</span>
-                    </div>
-                  );
-                })}
-              </div>
+              <WeeklyStudyChart data={weeklyReport.by_day} />
             ) : (
               <div className="empty-chart">
                 <p>No study data for this week yet</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="card productivity-chart">
+          <div className="card-header">
+            <h2>🎯 Focus Score Trend</h2>
+          </div>
+          <div className="chart-container">
+            {weeklyReport?.by_day && weeklyReport.by_day.length > 0 ? (
+              <FocusScoreChart data={weeklyReport.by_day} />
+            ) : (
+              <div className="empty-chart">
+                <p>No focus data for this week yet</p>
               </div>
             )}
           </div>

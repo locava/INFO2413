@@ -20,6 +20,13 @@
   --accent-purple: #8b5cf6;
   --accent-red: #ef4444;
 
+  /* Modern gradient colors */
+  --primary-color: #667eea;
+  --primary-light: #764ba2;
+  --success-color: #10b981;
+  --warning-color: #f59e0b;
+  --info-color: #3b82f6;
+
   /* Semantic Colors */
   --text-primary: var(--gray-900);
   --text-secondary: var(--gray-600);
@@ -135,17 +142,41 @@ button {
   font-weight: 500;
   font-family: inherit;
   cursor: pointer;
-  transition: all var(--transition-base);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
   letter-spacing: 0.01em;
+  position: relative;
+  overflow: hidden;
+}
+
+button::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+button:hover::before {
+  width: 300px;
+  height: 300px;
 }
 
 button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+button:disabled::before {
+  display: none;
 }
 
 input, textarea, select {

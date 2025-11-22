@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { aiAPI } from '../../services/api';
 import Select from '../../components/ui/Select';
+import { WeeklyStudyChart, FocusScoreChart, CourseDistributionChart, MonthlyTrendChart } from '../../components/charts/StudyCharts';
 import './Reports.css';
 
 function ReportsPage() {
@@ -194,52 +195,26 @@ function ReportsPage() {
             </div>
           </div>
 
-          {/* Daily Breakdown */}
+          {/* Daily Study Time Chart */}
           <div className="card visualization-card">
-            <h2>Daily Study Time</h2>
-            <div className="bar-chart">
-              {weeklyReport.by_day && weeklyReport.by_day.length > 0 ? (
-                weeklyReport.by_day.map((day) => (
-                  <div key={day.date} className="bar-item">
-                    <div className="bar-label">{new Date(day.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</div>
-                    <div className="bar-container">
-                      <div
-                        className="bar-fill"
-                        style={{ width: `${(day.minutes / Math.max(...weeklyReport.by_day.map(d => d.minutes), 1)) * 100}%` }}
-                      >
-                        <span className="bar-value">{day.minutes} min (Focus: {day.focus_score})</span>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <p className="no-data">No study sessions this week</p>
-              )}
-            </div>
+            <h2>📊 Daily Study Time</h2>
+            <WeeklyStudyChart data={weeklyReport.by_day} />
           </div>
 
-          {/* Top Courses */}
-          <div className="card">
-            <h2>Top Courses</h2>
-            <div className="bar-chart">
-              {weeklyReport.top_courses && weeklyReport.top_courses.length > 0 ? (
-                weeklyReport.top_courses.map((course) => (
-                  <div key={course.course_id} className="bar-item">
-                    <div className="bar-label">{course.course_name}</div>
-                    <div className="bar-container">
-                      <div
-                        className="bar-fill"
-                        style={{ width: `${(course.hours / Math.max(...weeklyReport.top_courses.map(c => c.hours), 1)) * 100}%` }}
-                      >
-                        <span className="bar-value">{course.hours.toFixed(1)} hours</span>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <p className="no-data">No course data available</p>
-              )}
-            </div>
+          {/* Focus Score Trend */}
+          <div className="card visualization-card">
+            <h2>🎯 Focus Score Trend</h2>
+            <FocusScoreChart data={weeklyReport.by_day} />
+          </div>
+
+          {/* Top Courses Distribution */}
+          <div className="card visualization-card">
+            <h2>📚 Course Time Distribution</h2>
+            {weeklyReport.top_courses && weeklyReport.top_courses.length > 0 ? (
+              <CourseDistributionChart courses={weeklyReport.top_courses} />
+            ) : (
+              <p className="no-data">No course data available</p>
+            )}
           </div>
 
           {/* Distractions */}
@@ -282,44 +257,13 @@ function ReportsPage() {
             </div>
           </div>
 
-          {/* Weekly Hours */}
+          {/* Monthly Trend Chart */}
           <div className="card visualization-card">
-            <h2>Hours Per Week</h2>
-            <div className="bar-chart">
-              {monthlyReport.hours_per_week && monthlyReport.hours_per_week.map((hours, index) => (
-                <div key={index} className="bar-item">
-                  <div className="bar-label">Week {index + 1}</div>
-                  <div className="bar-container">
-                    <div
-                      className="bar-fill"
-                      style={{ width: `${(hours / Math.max(...monthlyReport.hours_per_week, 1)) * 100}%` }}
-                    >
-                      <span className="bar-value">{hours} hours</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Weekly Focus Scores */}
-          <div className="card visualization-card">
-            <h2>Weekly Focus Scores</h2>
-            <div className="bar-chart">
-              {monthlyReport.weekly_focus_scores && monthlyReport.weekly_focus_scores.map((score, index) => (
-                <div key={index} className="bar-item">
-                  <div className="bar-label">Week {index + 1}</div>
-                  <div className="bar-container">
-                    <div
-                      className="bar-fill"
-                      style={{ width: `${score}%`, backgroundColor: score >= 75 ? '#10b981' : score >= 50 ? '#f59e0b' : '#ef4444' }}
-                    >
-                      <span className="bar-value">{score}/100</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <h2>📈 Monthly Progress Trend</h2>
+            <MonthlyTrendChart
+              hoursPerWeek={monthlyReport.hours_per_week}
+              focusScores={monthlyReport.weekly_focus_scores}
+            />
           </div>
 
           {/* Common Distractions */}
