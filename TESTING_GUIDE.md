@@ -37,13 +37,13 @@ npm run dev
 1. Open browser: http://localhost:5173
 2. Click "Login" (or you're already on login page)
 3. Enter credentials:
-   - Email: `alice@example.com`
+   - Email: `emran@example.com`
    - Password: `password123`
 4. Click "Login"
 
 **Expected Result:**
 - ✅ Redirects to `/student/dashboard`
-- ✅ Shows "Welcome, Alice Johnson"
+- ✅ Shows "Welcome, Emran"
 - ✅ Shows weekly stats (hours, sessions, focus score)
 - ✅ Shows recent sessions table
 - ✅ Shows weekly hours chart
@@ -159,7 +159,7 @@ npm run dev
 ### **✅ Test 4: Role-Based Access Control (2 minutes)**
 
 #### **4.1 Test Student Access**
-1. Login as student (`alice@example.com`)
+1. Login as student (`emran@example.com`)
 2. Try to access: http://localhost:5173/instructor/dashboard
 
 **Expected Result:**
@@ -253,7 +253,7 @@ Before presenting to professor:
 
 | Role | Email | Password | Access |
 |------|-------|----------|--------|
-| Student | alice@example.com | password123 | Student Dashboard |
+| Student | emran@example.com | password123 | Student Dashboard |
 | Student | bob@example.com | password123 | Student Dashboard |
 | Instructor | carol@example.com | password123 | Instructor Dashboard |
 | Instructor | dave@example.com | password123 | Instructor Dashboard |

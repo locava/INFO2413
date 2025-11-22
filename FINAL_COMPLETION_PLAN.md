@@ -129,7 +129,7 @@
 ## ✅ Success Criteria
 
 After completion, verify:
-- ✅ Student can login with alice@example.com
+- ✅ Student can login with emran@example.com
 - ✅ Instructor can login with carol@example.com
 - ✅ Admin can login with admin@example.com
 - ✅ Each role sees their own dashboard

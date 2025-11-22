@@ -316,7 +316,7 @@ npm run dev
 ## 📊 **Demo Scenarios Ready**
 
 ### **Scenario 1: Student Logs In and Views Dashboard** ✅
-1. Student logs in (alice@example.com / password123)
+1. Student logs in (emran@example.com / password123)
 2. Dashboard shows:
    - Total study hours this week
    - Number of sessions

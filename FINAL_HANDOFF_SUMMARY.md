@@ -145,14 +145,14 @@ npm run dev
 
 ### **Quick Test:**
 1. Open http://localhost:5173
-2. Login: `alice@example.com` / `password123`
+2. Login: `emran@example.com` / `password123`
 3. Should see student dashboard with real data
 
 ### **Full Test:**
 See `TESTING_GUIDE.md` for complete testing scenarios.
 
 ### **Test Accounts:**
-- **Student:** alice@example.com / password123
+- **Student:** emran@example.com / password123
 - **Instructor:** carol@example.com / password123
 - **Admin:** admin@example.com / password123
 

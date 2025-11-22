@@ -77,7 +77,7 @@ Open browser to `http://localhost:5173`
 
 **Test Account**:
 ```
-Email: alice@example.com
+Email: emran@example.com
 Password: password123
 Role: Student
 ```
@@ -270,7 +270,7 @@ INFO2413/
 ## 👥 **Test Accounts**
 
 ### **Students**
-- Alice Johnson: `alice@example.com` / `password123` (B00123456)
+- Emran: `emran@example.com` / `password123` (B00123456)
 - Bob Smith: `bob@example.com` / `password123` (B00123457)
 - Charlie Brown: `charlie@example.com` / `password123` (B00123458)
 

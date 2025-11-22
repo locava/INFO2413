@@ -12,25 +12,23 @@ TRUNCATE TABLE study_sessions, enrollments, courses, students, instructors, user
 -- ============================================
 -- Password for all users: "password123"
 -- Login credentials:
---   admin@studytracker.com / password123
---   sarah.johnson@studytracker.com / password123
---   michael.chen@studytracker.com / password123
---   john.smith@student.com / password123
---   emily.davis@student.com / password123
---   alex.martinez@student.com / password123
+--   admin@example.com / password123
+--   emran@example.com / password123
+--   carol@example.com / password123
+--   bob@example.com / password123
 
 INSERT INTO users (user_id, name, email, password_hash, role, phone, dob, status, created_at) VALUES
 -- Admin
-('a0000000-0000-0000-0000-000000000001', 'Admin User', 'admin@studytracker.com', '$2b$10$u.5/ZdrlOiGZLsMvTS36fu/lp58aY3PcKqkBT56wDjygILeu78Afu', 'Administrator', '555-0001', '1985-01-01', 'Active', NOW()),
+('a0000000-0000-0000-0000-000000000001', 'System Administrator', 'admin@example.com', '$2b$10$u.5/ZdrlOiGZLsMvTS36fu/lp58aY3PcKqkBT56wDjygILeu78Afu', 'Administrator', '555-0001', '1985-01-01', 'Active', NOW()),
 
 -- Instructors
-('a0000000-0000-0000-0000-000000000002', 'Dr. Sarah Johnson', 'sarah.johnson@studytracker.com', '$2b$10$9iRAD/5NJgTAFoDTVxl1DOVCbrYNnGxOWa9mOhb3n7FNOr0Bp8u9K', 'Instructor', '555-0002', '1980-05-15', 'Active', NOW()),
-('a0000000-0000-0000-0000-000000000003', 'Prof. Michael Chen', 'michael.chen@studytracker.com', '$2b$10$K0MYxAudSD.6ANpWRE24cuUnTFXCxiw/1J//rsk0YCi0y0HAC1Ubm', 'Instructor', '555-0003', '1978-08-22', 'Active', NOW()),
+('a0000000-0000-0000-0000-000000000002', 'Carol White', 'carol@example.com', '$2b$10$9iRAD/5NJgTAFoDTVxl1DOVCbrYNnGxOWa9mOhb3n7FNOr0Bp8u9K', 'Instructor', '555-0002', '1980-05-15', 'Active', NOW()),
+('a0000000-0000-0000-0000-000000000003', 'Dave Brown', 'dave@example.com', '$2b$10$K0MYxAudSD.6ANpWRE24cuUnTFXCxiw/1J//rsk0YCi0y0HAC1Ubm', 'Instructor', '555-0003', '1978-08-22', 'Active', NOW()),
 
 -- Students
-('a0000000-0000-0000-0000-000000000004', 'John Smith', 'john.smith@student.com', '$2b$10$ihGpCo.QEO0/F8sJWe.zeuIQKipHy5j07AQqMY.4PzEvy.Z79nER.', 'Student', '555-0004', '2002-03-10', 'Active', NOW()),
-('a0000000-0000-0000-0000-000000000005', 'Emily Davis', 'emily.davis@student.com', '$2b$10$pcxVWqeV5orhk/nQMGrqaOYidXGzjt7g7nZLkqETF7v5h./jv8zNS', 'Student', '555-0005', '2001-07-18', 'Active', NOW()),
-('a0000000-0000-0000-0000-000000000006', 'Alex Martinez', 'alex.martinez@student.com', '$2b$10$.Cs8FKpNBQUm4HucEN8pTu.GueWYcSoOMkJs4g/uhQkY6nUH7z1VC', 'Student', '555-0006', '2003-11-25', 'Active', NOW());
+('a0000000-0000-0000-0000-000000000004', 'Emran', 'emran@example.com', '$2b$10$ihGpCo.QEO0/F8sJWe.zeuIQKipHy5j07AQqMY.4PzEvy.Z79nER.', 'Student', '555-0004', '2002-03-10', 'Active', NOW()),
+('a0000000-0000-0000-0000-000000000005', 'Bob Smith', 'bob@example.com', '$2b$10$pcxVWqeV5orhk/nQMGrqaOYidXGzjt7g7nZLkqETF7v5h./jv8zNS', 'Student', '555-0005', '2001-07-18', 'Active', NOW()),
+('a0000000-0000-0000-0000-000000000006', 'Charlie Davis', 'charlie@example.com', '$2b$10$.Cs8FKpNBQUm4HucEN8pTu.GueWYcSoOMkJs4g/uhQkY6nUH7z1VC', 'Student', '555-0006', '2003-11-25', 'Active', NOW());
 
 -- ============================================
 -- 2. INSTRUCTORS

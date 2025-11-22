@@ -32,7 +32,7 @@ npm run dev
 
 ### **4. Login with Test Account**
 ```
-Email: alice@example.com
+Email: emran@example.com
 Password: password123
 Role: Student
 ```
@@ -42,7 +42,7 @@ Role: Student
 ## 🎯 **What's Working - Demo Scenarios**
 
 ### **Scenario 1: Student Dashboard** ✅
-1. Login as Alice (alice@example.com / password123)
+1. Login as Emran (emran@example.com / password123)
 2. View Dashboard showing:
    - ✅ Total study hours this week (from real data)
    - ✅ Number of sessions completed
@@ -261,8 +261,8 @@ Role: Student
 
 ### **Students**
 ```
-Alice Johnson
-Email: alice@example.com
+Emran
+Email: emran@example.com
 Password: password123
 Student Number: B00123456
 ```

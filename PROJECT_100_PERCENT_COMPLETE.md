@@ -225,7 +225,7 @@ npm run dev
 
 ### **✅ Test 1: Student Login & Dashboard**
 1. Navigate to http://localhost:5173
-2. Login: `alice@example.com` / `password123`
+2. Login: `emran@example.com` / `password123`
 3. ✅ Redirects to `/student/dashboard`
 4. ✅ Shows weekly stats from AI
 5. ✅ Shows recent sessions

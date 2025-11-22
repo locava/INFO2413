@@ -130,7 +130,7 @@ function LoginPage() {
                 <input
                   type="email"
                   id="email"
-                  placeholder="alice@example.com"
+                  placeholder="emran@example.com"
                   value={formData.email}
                   onChange={handleChange}
                   required
