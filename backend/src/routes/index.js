@@ -5,6 +5,7 @@ const studentRouter = require('./student.routes');
 const instructorRouter = require('./instructor.routes');
 const adminRouter = require('./admin.routes');
 const alertsRouter = require('./alerts.routes');
+const aiRouter = require('./ai.routes');
 
 const router = express.Router();
 
@@ -13,5 +14,6 @@ router.use('/student', studentRouter);
 router.use('/instructor', instructorRouter);
 router.use('/admin', adminRouter);
 router.use('/alerts', alertsRouter);
+router.use('/ai', aiRouter);
 
 module.exports = router;

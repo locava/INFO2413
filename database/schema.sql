@@ -257,3 +257,31 @@ CREATE TABLE IF NOT EXISTS public.reports
 
 CREATE INDEX IF NOT EXISTS idx_reports_type_period
     ON public.reports (report_type, period_start, period_end);
+
+-- ==============================================
+-- TABLE: active_sessions
+-- ==============================================
+CREATE TABLE IF NOT EXISTS public.active_sessions
+(
+    active_session_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    student_id        uuid NOT NULL,
+    course_id         uuid NOT NULL,
+    session_id        uuid NOT NULL,
+    start_time        timestamptz NOT NULL DEFAULT now(),
+    end_time          timestamptz,
+    last_alert_sent_at timestamptz,
+    is_active         boolean NOT NULL DEFAULT true,
+    CONSTRAINT fk_as_course FOREIGN KEY (course_id)
+        REFERENCES public.courses (course_id) ON DELETE CASCADE,
+    CONSTRAINT fk_as_student FOREIGN KEY (student_id)
+        REFERENCES public.students (user_id) ON DELETE CASCADE,
+    CONSTRAINT fk_as_session FOREIGN KEY (session_id)
+        REFERENCES public.study_sessions (session_id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_active_sessions_student
+    ON public.active_sessions (student_id, is_active);
+
+CREATE INDEX IF NOT EXISTS idx_active_sessions_active
+    ON public.active_sessions (is_active)
+    WHERE is_active = true;
