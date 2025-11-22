@@ -1,49 +1,46 @@
+// backend/src/db/queries/instructor.queries.js
 const pool = require('../pool');
 
 const instructorQueries = {
-  // Get all courses taught by a specific instructor
-  getInstructorCourses: async (instructorId) => {
+  // Used by: Instructor Dashboard (Get my courses)
+  getCoursesByInstructorId: async (userId) => {
     const query = `
-      SELECT c.course_id, c.code, c.title, c.description, 
-             COUNT(e.student_id) as student_count
-      FROM courses c
-      LEFT JOIN enrollments e ON c.course_id = e.course_id
-      WHERE c.instructor_id = $1 
-      AND c.is_deleted = false
-      GROUP BY c.course_id
-      ORDER BY c.code ASC
+      SELECT * FROM courses 
+      WHERE instructor_id = $1 AND is_deleted = false
+      ORDER BY course_code ASC
     `;
-    const result = await pool.query(query, [instructorId]);
+    const result = await pool.query(query, [userId]);
     return result.rows;
   },
 
-  // Get list of students enrolled in a specific course
-  getCourseStudents: async (courseId) => {
+  // Used by: Instructor Dashboard (Get students in my course)
+  getStudentsByCourseId: async (courseId) => {
     const query = `
-      SELECT s.user_id, u.first_name, u.last_name, u.email, e.enrolled_at
+      SELECT 
+        s.student_id,
+        u.name,
+        u.email,
+        e.enrolled_at
       FROM enrollments e
-      JOIN students s ON e.student_id = s.user_id
+      JOIN students s ON e.student_id = s.student_id
       JOIN users u ON s.user_id = u.user_id
       WHERE e.course_id = $1
-      ORDER BY u.last_name ASC
+      ORDER BY u.name ASC
     `;
     const result = await pool.query(query, [courseId]);
     return result.rows;
   },
 
-  // Get detailed report for a specific course
-  getCourseReport: async (courseId) => {
+  // Used by: Instructor Reports (Get aggregate data)
+  getCourseStats: async (courseId) => {
+    // Placeholder for basic stats (count of students)
     const query = `
-      SELECT COUNT(e.student_id) as total_students
-      FROM enrollments e
-      WHERE e.course_id = $1
+      SELECT COUNT(*) as student_count 
+      FROM enrollments 
+      WHERE course_id = $1
     `;
     const result = await pool.query(query, [courseId]);
-    return {
-      courseId,
-      stats: result.rows[0],
-      message: "Detailed report logic pending AI module integration"
-    };
+    return result.rows[0];
   }
 };
 

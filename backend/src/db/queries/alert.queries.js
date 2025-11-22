@@ -1,5 +1,4 @@
-// src/db/queries/alert.queries.js
-const { query } = require('../../config/db');
+const pool = require('../pool');
 
 async function createAlert({
   type,
@@ -8,7 +7,7 @@ async function createAlert({
   courseId,
   triggeredByUserId,
 }) {
-  const res = await query(
+  const res = await pool.query(
     `
     INSERT INTO alerts (type, message, student_id, course_id, triggered_by_user_id)
     VALUES ($1, $2, $3, $4, $5)
@@ -22,7 +21,7 @@ async function createAlert({
 
 // Optional helpers for later if you want them
 async function getAlertsForStudent(studentId) {
-  const res = await query(
+  const res = await pool.query(
     `
     SELECT *
     FROM alerts
@@ -35,7 +34,7 @@ async function getAlertsForStudent(studentId) {
 }
 
 async function getAlertsForCourse(courseId) {
-  const res = await query(
+  const res = await pool.query(
     `
     SELECT *
     FROM alerts

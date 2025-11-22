@@ -10,6 +10,7 @@ router.use(requireRole('Administrator'));
 router.get('/users', adminController.getAllUsers);
 router.post('/users', adminController.createUser);
 router.delete('/users/:id', adminController.deleteUser);
+router.put('/users/:id', adminController.updateUser);
 
 // Course Management
 router.get('/courses', adminController.getAllCourses);

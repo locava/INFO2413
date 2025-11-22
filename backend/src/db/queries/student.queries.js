@@ -1,8 +1,7 @@
-// src/db/queries/student.queries.js
-const { query } = require('../../config/db');
+const pool = require('../pool');
 
 async function getStudentByUserId(userId) {
-  const res = await query(
+  const res = await pool.query(
     `
     SELECT *
     FROM students

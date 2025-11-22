@@ -3,7 +3,6 @@ const pool = require('../pool');
 const bcrypt = require('bcrypt');
 
 const userQueries = {
-  // ✅ FIX: Check 'status' instead of 'is_deleted'
   findUserByEmail: async (email) => {
     const query = `SELECT * FROM users WHERE email = $1 AND status = 'Active'`;
     const result = await pool.query(query, [email]);
@@ -71,12 +70,36 @@ const userQueries = {
     `;
     const result = await pool.query(query, [userId]);
     return result.rows[0];
-  }
+  },
+
+  updateUser: async (userId, userData) => {
+    // Check if we need to combine names again (like in create)
+    const { first_name, last_name, email, role } = userData;
+    let fullName = userData.name;
+
+    if (first_name && last_name) {
+      fullName = `${first_name} ${last_name}`;
+    }
+
+    const query = `
+      UPDATE users 
+      SET name = $1, email = $2, role = $3
+      WHERE user_id = $4
+      RETURNING user_id, name, email, role, status
+    `;
+    const result = await pool.query(query, [fullName, email, role, userId]);
+    return result.rows[0];
+  },
+
+  
 };
+
+
 
 // Aliases
 userQueries.createUser = userQueries.create;
 userQueries.findByEmail = userQueries.findUserByEmail;
 userQueries.findById = userQueries.findUserById;
+userQueries.updateUser = userQueries.updateUser;
 
 module.exports = userQueries;

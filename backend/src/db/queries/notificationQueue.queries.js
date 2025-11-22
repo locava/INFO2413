@@ -1,8 +1,7 @@
-// src/db/queries/notificationQueue.queries.js
-const { query } = require('../../config/db');
+const pool = require('../pool');
 
 async function createQueueItem({ alertId, recipientUserId, channel }) {
-  const res = await query(
+  const res = await pool.query(
     `
     INSERT INTO notification_queue (alert_id, recipient_user_id, channel, status, attempts)
     VALUES ($1, $2, $3, 'PENDING', 0)
@@ -15,7 +14,7 @@ async function createQueueItem({ alertId, recipientUserId, channel }) {
 }
 
 async function getPendingQueueItems() {
-  const res = await query(
+  const res = await pool.query(
     `
     SELECT *
     FROM notification_queue
@@ -28,7 +27,7 @@ async function getPendingQueueItems() {
 }
 
 async function markQueueItemSent(id) {
-  const res = await query(
+  const res = await pool.query(
     `
     UPDATE notification_queue
     SET status = 'SENT',
