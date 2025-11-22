@@ -80,10 +80,30 @@ function DashboardPage() {
           <h1>Dashboard</h1>
           <p className="page-subtitle">Welcome back, {user?.name}! Here's your study overview</p>
         </div>
-        <button className="btn-primary" onClick={() => navigate('/student/log-session')}>
-          <span>📝</span>
-          <span>Quick Log Session</span>
-        </button>
+        
+        {/* ✅ NEW: Action Buttons Container */}
+        <div style={{ display: 'flex', gap: '1rem' }}>
+          
+          {/* 1. New Profile Button */}
+          <button 
+            className="btn-secondary" 
+            onClick={() => navigate('/student/profile')}
+            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+          >
+            <span>👤</span>
+            <span>Edit Profile</span>
+          </button>
+
+          {/* 2. Existing Log Session Button */}
+          <button 
+            className="btn-primary" 
+            onClick={() => navigate('/student/log-session')}
+            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+          >
+            <span>📝</span>
+            <span>Quick Log Session</span>
+          </button>
+        </div>
       </div>
 
       <div className="stats-grid">

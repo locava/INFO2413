@@ -67,22 +67,49 @@ const userQueries = {
   },
 
   updateUser: async (userId, userData) => {
-    // Check if we have a single name or need to combine parts
-    const { name, first_name, last_name, email, role } = userData;
+    // 1. Prepare data for dynamic update
+    const fields = [];
+    const values = [];
+    let index = 1;
+
+    // We must find the user first to preserve the name structure if needed
+    // In this case, we skip the name parsing since the controller handles it.
+
+    // 2. Iterate over the data payload to build the query dynamically
+    if (userData.name !== undefined) {
+        fields.push(`name = $${index++}`);
+        values.push(userData.name);
+    }
+    if (userData.email !== undefined) {
+        fields.push(`email = $${index++}`);
+        values.push(userData.email);
+    }
+    // Note: The controller should have ensured role and status are NOT in userData 
+    // unless you intend to update them. Since they are protected, they won't be here.
+    if (userData.phone !== undefined) {
+        fields.push(`phone = $${index++}`);
+        values.push(userData.phone);
+    }
     
-    // Prioritize the direct 'name', otherwise try to combine
-    let fullName = name;
-    if (!fullName && (first_name || last_name)) {
-      fullName = `${first_name || ''} ${last_name || ''}`.trim();
+    // 3. Check for errors
+    if (fields.length === 0) {
+        throw new Error("No fields provided for user update.");
     }
 
+    // 4. Final Query construction
+    const setClause = fields.join(', ');
+    
+    // Add the user ID to the end of the values list for the WHERE clause
+    values.push(userId);
+    
     const query = `
       UPDATE users 
-      SET name = $1, email = $2, role = $3
-      WHERE user_id = $4
-      RETURNING user_id, name, email, role, status
+      SET ${setClause}
+      WHERE user_id = $${index}
+      RETURNING user_id, name, email, role, status, phone
     `;
-    const result = await pool.query(query, [fullName, email, role, userId]);
+    
+    const result = await pool.query(query, values);
     return result.rows[0];
   },
 };

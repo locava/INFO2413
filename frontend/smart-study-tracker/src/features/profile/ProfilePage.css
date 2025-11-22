@@ -1,0 +1,104 @@
+.profile-page {
+  padding: 2rem;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.page-header {
+  margin-bottom: 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.page-header h1 {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: var(--gray-900, #111827);
+  margin-bottom: 0.5rem;
+  letter-spacing: -0.02em;
+}
+
+.page-subtitle {
+  color: var(--text-secondary, #6b7280);
+  font-size: 1rem;
+}
+
+/* Container handles centering the card */
+.profile-container {
+  display: flex;
+  justify-content: center;
+}
+
+/* The Card Style (Matches Session Card) */
+.profile-form-card {
+  background: var(--white, #ffffff);
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: var(--radius-lg, 12px);
+  box-shadow: var(--shadow-sm, 0 1px 2px 0 rgba(0, 0, 0, 0.05));
+  padding: 2rem;
+  width: 100%;
+  max-width: 600px; /* Controls width like the session form */
+  animation: slideUp 0.3s ease-out;
+}
+
+.profile-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Success/Error Banners */
+.message-banner {
+  padding: 1rem;
+  border-radius: var(--radius-md, 6px);
+  font-weight: 500;
+  font-size: 0.9375rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.message-banner.success {
+  background-color: #f0fdf4;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+
+.message-banner.error {
+  background-color: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+/* Button Container */
+.form-actions {
+  margin-top: 1rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border-color, #e5e7eb);
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Animation */
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Mobile Responsive */
+@media (max-width: 640px) {
+  .profile-page {
+    padding: 1rem;
+  }
+  
+  .profile-form-card {
+    padding: 1.5rem;
+  }
+
+  .page-header h1 {
+    font-size: 1.5rem;
+  }
+}

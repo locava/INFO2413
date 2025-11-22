@@ -1,6 +1,7 @@
 // backend/src/controllers/auth.controller.js
 const jwt = require('jsonwebtoken');
 const authService = require('../services/auth.service');
+const userQueries = require('../db/queries/user.queries');
 
 exports.register = async (req, res, next) => {
   try {
@@ -67,5 +68,33 @@ exports.getCurrentUser = (req, res) => {
       success: false,
       message: 'Not authenticated'
     });
+  }
+};
+
+exports.updateProfile = async (req, res, next) => {
+  try {
+    const userId = req.session.user.user_id;
+    const updates = req.body;
+
+    // 🛡️ SECURITY: Prevent users from changing sensitive fields
+    delete updates.role;     // Cannot make themselves Admin
+    delete updates.password; // Password changes require a different flow (hashing)
+    delete updates.user_id;  // Cannot change their ID
+
+    // Call the query to update the user in the database
+    const updatedUser = await userQueries.updateUser(userId, updates);
+
+    // ✅ CRITICAL: Update the active session with new data
+    // This ensures the name updates immediately in the header
+    req.session.user = updatedUser;
+    // req.session.save(); // Save is often implicit, but calling it is safer
+
+    res.json({
+      success: true,
+      message: 'Profile updated successfully',
+      data: updatedUser
+    });
+  } catch (error) {
+    next(error);
   }
 };

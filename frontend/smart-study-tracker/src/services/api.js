@@ -53,6 +53,12 @@ export const authAPI = {
 
   getCurrentUser: () =>
     apiRequest('/api/auth/me'),
+
+  updateProfile: (userData) =>
+    apiRequest('/api/auth/profile', {
+      method: 'PUT',
+      body: JSON.stringify(userData),
+    }),
 };
 
 // ============================================
