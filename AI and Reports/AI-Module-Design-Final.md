@@ -120,7 +120,7 @@ Optional (if later added):
 
 ## 4. Focus-Loss Prediction Algorithm (FINAL)
 
-### 4.1 Training Phase — Building `typical_focus_loss_minutes`
+### 4.1 Training Phase — Building `typical_focus_loss'
 
 **Goal:** estimate a student’s typical focus-loss window from recent study sessions.
 
@@ -131,9 +131,9 @@ A session suggests a “focus drop point” when **near the end of the session**
 - distractions appear more frequently late-session
 - session runs much longer than student’s average
 
-#### Training pseudocode
-```pseudo
-function trainFocusModel(studentId, courseId=null):
+#### 
+`` Algorthm
+function AlgorithmFocusLoss(studentId, courseId=null):
     sessions = last N study_sessions for studentId (filter by courseId if provided)
     if sessions.count < 3:
         return default model:
@@ -156,3 +156,4 @@ function trainFocusModel(studentId, courseId=null):
         confidence = min(0.95, 0.60 + (focusDropCandidates.count / sessions.count))
 
     save to focus_models(studentId, courseId, typical, avgSession, preferred_start_hour, confidence)
+
