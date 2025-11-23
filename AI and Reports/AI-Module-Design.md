@@ -1,4 +1,4 @@
-# AI Module Design – Smart Study & Productivity Tracker
+# AI Module Design – Smart Study & Productivity Tracker (Person 4)
 
 ## 1. Purpose of the AI Module
 
@@ -151,6 +151,7 @@ Quick overview of the student’s recent study patterns.
   "common_distractions": ["phone", "social_media"],
   "average_focus_rating": 4.2
 }
+
 
 
 
