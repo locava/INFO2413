@@ -181,6 +181,14 @@ function DashboardPage() {
                   'linear-gradient(135deg, #fa709a, #fee140)'
                 ];
 
+                // Format distractions if they exist
+                const formattedDistractions = session.distractions
+                  ? session.distractions
+                      .split(',')
+                      .map(d => d.trim().split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '))
+                      .join(', ')
+                  : null;
+
                 return (
                   <div key={session.session_id} className="session-item">
                     <div className="session-subject">
@@ -189,7 +197,12 @@ function DashboardPage() {
                       </span>
                       <div>
                         <h4>{session.course_name || 'Study Session'}</h4>
-                        <p>{session.mood || 'No mood recorded'}</p>
+                        <p className="session-mood">{session.mood || 'No mood recorded'}</p>
+                        {formattedDistractions && (
+                          <p className="session-distractions">
+                            <span className="distraction-icon">⚠️</span> {formattedDistractions}
+                          </p>
+                        )}
                       </div>
                     </div>
                     <div className="session-meta">

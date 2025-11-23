@@ -7,7 +7,7 @@ const { sendSuccess } = require('../utils/response');
 // - enqueues a notification
 async function createTestAlert(req, res, next) {
   try {
-    const userId = req.user.userId; // whoever calls it
+    const userId = req.session.user.user_id; // whoever calls it
     const { message, type, studentId, courseId } = req.body;
 
     const result = await alertService.createTestAlert({

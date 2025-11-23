@@ -15,20 +15,23 @@ async function createTestAlert({
   studentId,
   courseId,
 }) {
+  // Use triggeredByUserId as studentId if not provided
+  const finalStudentId = studentId || triggeredByUserId;
+
   // 1) Create alert in alerts table
   const alert = await alertQueries.createAlert({
     type,
     message,
-    studentId,
+    studentId: finalStudentId,
     courseId,
     triggeredByUserId,
   });
 
   // 2) Enqueue notification for this alert
   const queueItem = await notificationQueueService.enqueueNotification({
-    alertId: alert.id,
+    alertId: alert.alert_id,
     channel: 'EMAIL', // placeholder – could be 'SMS' or 'IN_APP'
-    recipientUserId: studentId || triggeredByUserId,
+    recipientUserId: finalStudentId,
   });
 
   return {

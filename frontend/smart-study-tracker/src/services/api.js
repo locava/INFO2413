@@ -59,6 +59,12 @@ export const authAPI = {
       method: 'PUT',
       body: JSON.stringify(userData),
     }),
+
+  changePassword: (currentPassword, newPassword) =>
+    apiRequest('/api/auth/change-password', {
+      method: 'PUT',
+      body: JSON.stringify({ currentPassword, newPassword }),
+    }),
 };
 
 // ============================================
@@ -150,10 +156,10 @@ export const instructorAPI = {
     apiRequest('/api/instructor/courses'),
 
   getCourseStudents: (courseId) =>
-    apiRequest(`/api/instructor/courses/${courseId}/students`),
+    apiRequest(`/api/instructor/course/${courseId}/students`),
 
   getCourseStats: (courseId) =>
-    apiRequest(`/api/instructor/courses/${courseId}/stats`),
+    apiRequest(`/api/instructor/course/${courseId}/stats`),
 };
 
 // ============================================
@@ -198,6 +204,21 @@ export const adminAPI = {
       method: 'DELETE',
     }),
 
+  // Enrollments
+  getStudentEnrollments: (studentId) =>
+    apiRequest(`/api/admin/enrollments/student/${studentId}`),
+
+  enrollStudent: (studentId, courseId) =>
+    apiRequest('/api/admin/enrollments', {
+      method: 'POST',
+      body: JSON.stringify({ studentId, courseId }),
+    }),
+
+  unenrollStudent: (studentId, courseId) =>
+    apiRequest(`/api/admin/enrollments/${studentId}/${courseId}`, {
+      method: 'DELETE',
+    }),
+
   // Thresholds
   getThresholds: () =>
     apiRequest('/api/admin/thresholds'),
@@ -211,6 +232,17 @@ export const adminAPI = {
   // Reports
   getReports: () =>
     apiRequest('/api/admin/reports'),
+
+  // Alerts & Notifications
+  getAlerts: (limit = 50) =>
+    apiRequest(`/api/admin/alerts?limit=${limit}`),
+
+  getNotifications: (limit = 50) =>
+    apiRequest(`/api/admin/notifications?limit=${limit}`),
+
+  // Data Quality
+  getDataQuality: () =>
+    apiRequest('/api/admin/data-quality'),
 };
 
 export default {

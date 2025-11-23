@@ -546,6 +546,7 @@ async function generateInstructorSummaryReport(instructorId, courseId, range = '
     range,
     week_start: weekStart.toISOString().split('T')[0],
     week_end: weekEnd.toISOString().split('T')[0],
+    students_enrolled: students.length,
     average_hours_per_student: averageHoursPerStudent,
     average_focus_score: averageFocusScore,
     students_at_risk: studentsAtRisk,

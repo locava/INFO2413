@@ -8,9 +8,12 @@ function InstructorDashboard() {
   const [courses, setCourses] = useState([]);
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [courseReport, setCourseReport] = useState(null);
+  const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [reportLoading, setReportLoading] = useState(false);
+  const [studentsLoading, setStudentsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [activeTab, setActiveTab] = useState('overview'); // 'overview' or 'students'
 
   useEffect(() => {
     fetchCourses();
@@ -19,6 +22,7 @@ function InstructorDashboard() {
   useEffect(() => {
     if (selectedCourse) {
       fetchCourseReport(selectedCourse.course_id);
+      fetchCourseStudents(selectedCourse.course_id);
     }
   }, [selectedCourse]);
 
@@ -46,8 +50,10 @@ function InstructorDashboard() {
   const fetchCourseReport = async (courseId) => {
     setReportLoading(true);
     try {
-      const response = await aiAPI.getInstructorReport(courseId);
+      const response = await aiAPI.getInstructorReport(courseId, { range: 'week' });
       if (response.success) {
+        console.log('📊 Course Report Data:', response.data);
+        console.log('📊 Engagement by day:', response.data.engagement_by_day);
         setCourseReport(response.data);
       }
     } catch (err) {
@@ -55,6 +61,21 @@ function InstructorDashboard() {
       setCourseReport(null);
     } finally {
       setReportLoading(false);
+    }
+  };
+
+  const fetchCourseStudents = async (courseId) => {
+    setStudentsLoading(true);
+    try {
+      const response = await instructorAPI.getCourseStudents(courseId);
+      if (response.success) {
+        setStudents(response.data || []);
+      }
+    } catch (err) {
+      console.error('Failed to load students:', err);
+      setStudents([]);
+    } finally {
+      setStudentsLoading(false);
     }
   };
 
@@ -104,33 +125,58 @@ function InstructorDashboard() {
       </div>
 
       {/* Course Selector */}
-      <div className="course-selector">
-        <label htmlFor="course-select">Select Course:</label>
-        <select
-          id="course-select"
-          value={selectedCourse?.course_id || ''}
-          onChange={(e) => {
-            const course = courses.find(c => c.course_id === e.target.value);
-            setSelectedCourse(course);
-          }}
-          className="course-select"
-        >
-          {courses.map(course => (
-            <option key={course.course_id} value={course.course_id}>
-              {course.course_code} - {course.course_name}
-            </option>
-          ))}
-        </select>
+      <div className="course-selector-card">
+        <div className="course-selector-header">
+          <div>
+            <label htmlFor="course-select">📚 Select Course</label>
+            <p className="course-selector-subtitle">View analytics and student performance</p>
+          </div>
+          <select
+            id="course-select"
+            value={selectedCourse?.course_id || ''}
+            onChange={(e) => {
+              const course = courses.find(c => c.course_id === e.target.value);
+              setSelectedCourse(course);
+            }}
+            className="course-select"
+          >
+            {courses.map(course => (
+              <option key={course.course_id} value={course.course_id}>
+                {course.course_code} - {course.course_name}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
-      {/* Course Report */}
-      {reportLoading ? (
-        <div className="loading-state">
-          <div className="spinner"></div>
-          <p>Loading course analytics...</p>
+      {/* Tab Navigation */}
+      {selectedCourse && (
+        <div className="tabs-container">
+          <button
+            className={`tab-button ${activeTab === 'overview' ? 'active' : ''}`}
+            onClick={() => setActiveTab('overview')}
+          >
+            📊 Overview & Analytics
+          </button>
+          <button
+            className={`tab-button ${activeTab === 'students' ? 'active' : ''}`}
+            onClick={() => setActiveTab('students')}
+          >
+            👥 Students ({students.length})
+          </button>
         </div>
-      ) : courseReport ? (
+      )}
+
+      {/* Overview Tab */}
+      {activeTab === 'overview' && (
         <>
+          {reportLoading ? (
+            <div className="loading-state">
+              <div className="spinner"></div>
+              <p>Loading course analytics...</p>
+            </div>
+          ) : courseReport ? (
+            <>
           {/* Privacy Notice */}
           {courseReport.privacy_notice && (
             <div className="privacy-notice">
@@ -180,55 +226,115 @@ function InstructorDashboard() {
                 </div>
               )}
 
-              {/* Daily Engagement */}
-              {courseReport.engagement_by_day && courseReport.engagement_by_day.length > 0 && (
-                <div className="card">
-                  <h2>Daily Class Engagement</h2>
-                  <div className="bar-chart">
-                    {courseReport.engagement_by_day.map((day) => (
-                      <div key={day.date} className="bar-item">
-                        <div className="bar-label">
-                          {new Date(day.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
-                        </div>
-                        <div className="bar-container">
-                          <div
-                            className="bar-fill"
-                            style={{
-                              width: `${(day.total_hours / Math.max(...courseReport.engagement_by_day.map(d => d.total_hours), 1)) * 100}%`
-                            }}
-                          >
-                            <span className="bar-value">{day.total_hours.toFixed(1)} hours</span>
+              {/* Daily Engagement - Completely Rewritten */}
+              {courseReport.engagement_by_day && courseReport.engagement_by_day.length > 0 ? (
+                <div className="card engagement-card">
+                  <div className="engagement-header">
+                    <div>
+                      <h2>📊 Daily Class Engagement</h2>
+                      <p className="card-subtitle">Total study hours per day across all students</p>
+                    </div>
+                  </div>
+
+                  <div className="engagement-chart-wrapper">
+                    {courseReport.engagement_by_day.map((dayData, idx) => {
+                      // Calculate max hours for scaling
+                      const allHours = courseReport.engagement_by_day.map(d => d.total_hours || 0);
+                      const maxHours = Math.max(...allHours, 1);
+                      const currentHours = dayData.total_hours || 0;
+                      const barWidth = Math.max((currentHours / maxHours) * 100, 8);
+
+                      // Parse and format date - directly from backend format "YYYY-MM-DD"
+                      const [year, month, day] = dayData.date.split('-');
+                      const dateObject = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+                      const monthName = dateObject.toLocaleDateString('en-US', { month: 'short' });
+                      const dayNum = dateObject.getDate();
+
+                      // Debug logging
+                      if (idx === 0) {
+                        console.log('📊 Rendering chart with data:', {
+                          totalDays: courseReport.engagement_by_day.length,
+                          maxHours,
+                          firstDay: dayData
+                        });
+                      }
+
+                      return (
+                        <div key={`engagement-${idx}-${dayData.date}`} className="engagement-row">
+                          <div className="engagement-date">
+                            <span className="date-month">{monthName}</span>
+                            <span className="date-day">{dayNum}</span>
+                          </div>
+                          <div className="engagement-bar-track">
+                            <div
+                              className="engagement-bar-fill"
+                              style={{ width: `${barWidth}%` }}
+                            >
+                              <span className="engagement-bar-label">
+                                {currentHours.toFixed(1)} hrs
+                              </span>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
+              ) : (
+                courseReport && (
+                  <div className="card">
+                    <h2>📊 Daily Class Engagement</h2>
+                    <p className="card-subtitle">No engagement data available for this period</p>
+                  </div>
+                )
               )}
 
               {/* Common Distractions */}
               {courseReport.common_distractions && courseReport.common_distractions.length > 0 && (
                 <div className="card">
-                  <h2>Common Distractions</h2>
+                  <h2>⚠️ Common Distractions</h2>
                   <div className="distractions-list">
-                    {courseReport.common_distractions.map((distraction, index) => (
-                      <div key={index} className="distraction-item">
-                        <span className="distraction-name">{distraction}</span>
-                      </div>
-                    ))}
+                    {courseReport.common_distractions.map((distraction, index) => {
+                      // Format distraction name: replace underscores with spaces and capitalize
+                      const formattedDistraction = distraction
+                        .split('_')
+                        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                        .join(' ');
+
+                      return (
+                        <div key={index} className="distraction-item">
+                          <span className="distraction-name">{formattedDistraction}</span>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}
 
-              {/* Action Suggestions */}
+              {/* AI Insights & Action Suggestions */}
               {courseReport.action_suggestions && courseReport.action_suggestions.length > 0 && (
-                <div className="card">
-                  <h2>💡 Suggested Actions</h2>
-                  <ul className="suggestions-list">
+                <div className="card ai-insights-card">
+                  <div className="ai-insights-header">
+                    <div>
+                      <h2>🤖 AI-Powered Insights</h2>
+                      <p className="card-subtitle">Data-driven recommendations based on student performance</p>
+                    </div>
+                    <div className="ai-badge">
+                      <span className="ai-badge-icon">✨</span>
+                      <span>AI Analysis</span>
+                    </div>
+                  </div>
+                  <div className="suggestions-list">
                     {courseReport.action_suggestions.map((suggestion, index) => (
-                      <li key={index}>{suggestion}</li>
+                      <div key={index} className="suggestion-item">
+                        <div className="suggestion-icon">💡</div>
+                        <div className="suggestion-text">{suggestion}</div>
+                      </div>
                     ))}
-                  </ul>
+                  </div>
+                  <div className="ai-insights-footer">
+                    <p>📊 Analysis based on {courseReport.students_enrolled || 0} students • Week of {courseReport.week_start || 'N/A'}</p>
+                  </div>
                 </div>
               )}
             </>
@@ -245,6 +351,56 @@ function InstructorDashboard() {
         <div className="empty-state">
           <p>No report data available. Please select a course.</p>
         </div>
+      )}
+        </>
+      )}
+
+      {/* Students Tab */}
+      {activeTab === 'students' && (
+        <>
+          {studentsLoading ? (
+            <div className="loading-state">
+              <div className="spinner"></div>
+              <p>Loading students...</p>
+            </div>
+          ) : students.length > 0 ? (
+            <div className="card">
+              <div className="card-header">
+                <h2>👥 Enrolled Students</h2>
+                <span className="student-count-badge">{students.length} {students.length === 1 ? 'Student' : 'Students'}</span>
+              </div>
+              <div className="students-grid">
+                {students.map((student, index) => (
+                  <div key={student.user_id || index} className="student-card">
+                    <div className="student-avatar">
+                      {student.name?.charAt(0).toUpperCase() || 'S'}
+                    </div>
+                    <div className="student-details">
+                      <h3>{student.name || 'Unknown Student'}</h3>
+                      <p className="student-email">{student.email || 'No email'}</p>
+                      {student.total_hours !== undefined && (
+                        <div className="student-stats">
+                          <span className="stat-badge">
+                            ⏱️ {student.total_hours?.toFixed(1) || 0} hrs
+                          </span>
+                          {student.focus_score !== undefined && (
+                            <span className="stat-badge">
+                              🎯 {student.focus_score || 0}% focus
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="empty-state">
+              <p>No students enrolled in this course yet.</p>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

@@ -31,10 +31,34 @@ const authService = {
     if (existingUser) {
       throw new Error('User already exists');
     }
-    
+
     // Create new user (hashing happens in userQueries.create now)
     const newUser = await userQueries.create(userData);
     return newUser;
+  },
+
+  changePassword: async (userId, currentPassword, newPassword) => {
+    // Get user with password hash
+    const user = await userQueries.findById(userId);
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    // Verify current password
+    const isMatch = await bcrypt.compare(currentPassword, user.password_hash);
+
+    if (!isMatch) {
+      throw new Error('Current password is incorrect');
+    }
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update password in database
+    await userQueries.updatePassword(userId, hashedPassword);
+
+    return true;
   }
 };
 

@@ -3,11 +3,11 @@ const pool = require('../pool');
 async function createQueueItem({ alertId, recipientUserId, channel }) {
   const res = await pool.query(
     `
-    INSERT INTO notification_queue (alert_id, recipient_user_id, channel, status, attempts)
-    VALUES ($1, $2, $3, 'PENDING', 0)
+    INSERT INTO notification_queue (alert_id, channel, status)
+    VALUES ($1, $2, 'QUEUED')
     RETURNING *
     `,
-    [alertId, recipientUserId, channel]
+    [alertId, channel]
   );
 
   return res.rows[0];
@@ -18,8 +18,8 @@ async function getPendingQueueItems() {
     `
     SELECT *
     FROM notification_queue
-    WHERE status = 'PENDING'
-    ORDER BY created_at ASC
+    WHERE status = 'QUEUED'
+    ORDER BY enqueued_at ASC
     `
   );
 
@@ -31,9 +31,8 @@ async function markQueueItemSent(id) {
     `
     UPDATE notification_queue
     SET status = 'SENT',
-        attempts = attempts + 1,
         sent_at = NOW()
-    WHERE id = $1
+    WHERE queue_id = $1
     RETURNING *
     `,
     [id]

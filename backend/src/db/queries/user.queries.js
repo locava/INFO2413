@@ -11,18 +11,18 @@ const userQueries = {
 
   // ✅ FIX 1: Select 'name' column, not 'first_name, last_name' (which don't exist)
   findUserById: async (id) => {
-    const query = `SELECT user_id, name, email, role, status FROM users WHERE user_id = $1`;
+    const query = `SELECT user_id, name, email, role, status, password_hash FROM users WHERE user_id = $1`;
     const result = await pool.query(query, [id]);
     return result.rows[0];
   },
 
   create: async (userData) => {
-    const { name, first_name, last_name, email, password, role } = userData;
-    
+    const { name, first_name, last_name, email, password, role, studentNumber, program } = userData;
+
     // ✅ FIX 2: Use 'name' if provided. If not, safely combine first/last.
     // This prevents "undefined undefined".
     const fullName = name || `${first_name || ''} ${last_name || ''}`.trim();
-    
+
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const query = `
@@ -30,11 +30,23 @@ const userQueries = {
       VALUES ($1, $2, $3, $4, 'Active')
       RETURNING user_id, name, email, role
     `;
-    
+
     const result = await pool.query(query, [fullName, email, hashedPassword, role]);
-    
+    const user = result.rows[0];
+
+    // If creating a student, also create student record
+    if (role === 'Student') {
+      const studentNum = studentNumber || `B00${Math.floor(Math.random() * 900000 + 100000)}`;
+      const studentQuery = `
+        INSERT INTO students (user_id, student_number, program)
+        VALUES ($1, $2, $3)
+        RETURNING *
+      `;
+      await pool.query(studentQuery, [user.user_id, studentNum, program || null]);
+    }
+
     // Return the user exactly as it is in the DB
-    return result.rows[0];
+    return user;
   },
 
   getAllUsers: async (roleFilter = null) => {
@@ -112,6 +124,17 @@ const userQueries = {
     const result = await pool.query(query, values);
     return result.rows[0];
   },
+
+  updatePassword: async (userId, hashedPassword) => {
+    const query = `
+      UPDATE users
+      SET password_hash = $1
+      WHERE user_id = $2
+      RETURNING user_id
+    `;
+    const result = await pool.query(query, [hashedPassword, userId]);
+    return result.rows[0];
+  },
 };
 
 // Aliases
@@ -119,5 +142,6 @@ userQueries.createUser = userQueries.create;
 userQueries.findByEmail = userQueries.findUserByEmail;
 userQueries.findById = userQueries.findUserById;
 userQueries.updateUser = userQueries.updateUser;
+userQueries.updatePassword = userQueries.updatePassword;
 
 module.exports = userQueries;

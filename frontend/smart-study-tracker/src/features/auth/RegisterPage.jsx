@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { authAPI } from '../../services/api';
+import PasswordStrengthIndicator from '../../components/PasswordStrengthIndicator';
+import { validatePassword } from '../../utils/passwordValidator';
 import './RegisterPage.css';
 
 function RegisterPage() {
@@ -14,9 +16,27 @@ function RegisterPage() {
     studentNumber: '',
     role: 'Student'
   });
+  const [selectedCourses, setSelectedCourses] = useState([]);
+  const [availableCourses, setAvailableCourses] = useState([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [agreed, setAgreed] = useState(false);
+
+  // Fetch available courses on component mount
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        const response = await fetch('http://localhost:5001/api/auth/courses');
+        const data = await response.json();
+        if (data.success) {
+          setAvailableCourses(data.data);
+        }
+      } catch (err) {
+        console.error('Failed to fetch courses:', err);
+      }
+    };
+    fetchCourses();
+  }, []);
 
   const handleChange = (e) => {
     setFormData({
@@ -24,6 +44,21 @@ function RegisterPage() {
       [e.target.id]: e.target.value
     });
     setError('');
+  };
+
+  const handleCourseToggle = (courseId) => {
+    setSelectedCourses(prev => {
+      if (prev.includes(courseId)) {
+        return prev.filter(id => id !== courseId);
+      } else {
+        if (prev.length >= 3) {
+          setError('You can select a maximum of 3 courses');
+          return prev;
+        }
+        setError('');
+        return [...prev, courseId];
+      }
+    });
   };
 
   const handleSubmit = async (e) => {
@@ -36,13 +71,20 @@ function RegisterPage() {
       return;
     }
 
+    if (selectedCourses.length < 1 || selectedCourses.length > 3) {
+      setError('Please select between 1 and 3 courses');
+      return;
+    }
+
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
       return;
     }
 
-    if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters long');
+    // Validate password strength
+    const passwordValidation = validatePassword(formData.password);
+    if (!passwordValidation.isValid) {
+      setError(`Password requirements not met: ${passwordValidation.errors.join(', ')}`);
       return;
     }
 
@@ -54,7 +96,8 @@ function RegisterPage() {
         email: formData.email,
         password: formData.password,
         role: formData.role,
-        studentNumber: formData.studentNumber || `B00${Math.floor(Math.random() * 900000 + 100000)}`
+        studentNumber: formData.studentNumber || `B00${Math.floor(Math.random() * 900000 + 100000)}`,
+        courseIds: selectedCourses
       };
 
       const response = await authAPI.register(registerData);
@@ -159,16 +202,51 @@ function RegisterPage() {
             </div>
 
             <div className="form-group">
+              <label>Select Courses (1-3 required)</label>
+              <div className="course-selection">
+                {availableCourses.length === 0 ? (
+                  <p style={{ color: '#6b7280', fontSize: '14px' }}>Loading courses...</p>
+                ) : (
+                  availableCourses.map(course => (
+                    <div
+                      key={course.course_id}
+                      className={`course-option ${selectedCourses.includes(course.course_id) ? 'selected' : ''}`}
+                      onClick={() => !loading && handleCourseToggle(course.course_id)}
+                      style={{ cursor: loading ? 'not-allowed' : 'pointer' }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedCourses.includes(course.course_id)}
+                        onChange={() => {}}
+                        disabled={loading}
+                      />
+                      <div className="course-info">
+                        <div className="course-code">{course.code}</div>
+                        <div className="course-title">{course.title}</div>
+                        <div className="course-instructor">{course.instructor_name}</div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+              <div className="course-count">
+                {selectedCourses.length} of 3 courses selected
+                {selectedCourses.length < 1 && <span style={{ color: '#ef4444' }}> (minimum 1 required)</span>}
+              </div>
+            </div>
+
+            <div className="form-group">
               <label htmlFor="password">Password</label>
               <input
                 type="password"
                 id="password"
-                placeholder="Create a strong password (min 6 characters)"
+                placeholder="Create a strong password"
                 value={formData.password}
                 onChange={handleChange}
                 required
                 disabled={loading}
               />
+              <PasswordStrengthIndicator password={formData.password} />
             </div>
 
             <div className="form-group">
@@ -182,6 +260,15 @@ function RegisterPage() {
                 required
                 disabled={loading}
               />
+              {formData.confirmPassword && formData.password !== formData.confirmPassword && (
+                <div style={{
+                  marginTop: '8px',
+                  fontSize: '13px',
+                  color: '#ef4444'
+                }}>
+                  ❌ Passwords do not match
+                </div>
+              )}
             </div>
 
             <div className="form-group">

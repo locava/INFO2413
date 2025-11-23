@@ -6,26 +6,40 @@ require('dotenv').config();
 
 const app = express();
 
-// 1. CORS Middleware (Must be first)
+// 1. CORS Middleware (Must be first) - Enhanced Security
+const allowedOrigins = ['http://localhost:5173', 'http://localhost:3000'];
 app.use(cors({
-  origin: 'http://localhost:5173', // Your Frontend URL
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  },
   credentials: true,               // Allow cookies to be sent
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  exposedHeaders: ['set-cookie']
 }));
 
 // 2. Body Parsers
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// 3. Session Middleware (The Fix for your error)
+// 3. Session Middleware - Enhanced Security
 // This creates 'req.session' on every request
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'dev_secret_key', // Change this in production
+  secret: process.env.SESSION_SECRET || 'dev_secret_key_change_in_production',
   resave: false,
   saveUninitialized: false, // Don't create session until something is stored
+  name: 'sessionId', // Custom name instead of default 'connect.sid'
   cookie: {
-    secure: false, // Set to true if using https
-    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production', // HTTPS only in production
+    httpOnly: true,      // Prevents client-side JS from accessing the cookie
+    sameSite: 'lax',     // CSRF protection
     maxAge: 24 * 60 * 60 * 1000 // 24 hours
   }
 }));

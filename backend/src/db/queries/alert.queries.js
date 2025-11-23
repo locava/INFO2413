@@ -7,13 +7,15 @@ async function createAlert({
   courseId,
   triggeredByUserId,
 }) {
+  const triggerDetail = message ? { message } : null;
+
   const res = await pool.query(
     `
-    INSERT INTO alerts (type, message, student_id, course_id, triggered_by_user_id)
+    INSERT INTO alerts (alert_type, trigger_detail, student_id, course_id, recipient_user_id)
     VALUES ($1, $2, $3, $4, $5)
     RETURNING *
     `,
-    [type, message, studentId, courseId, triggeredByUserId]
+    [type, JSON.stringify(triggerDetail), studentId, courseId, triggeredByUserId]
   );
 
   return res.rows[0];

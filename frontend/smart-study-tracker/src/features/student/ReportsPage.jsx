@@ -220,14 +220,22 @@ function ReportsPage() {
           {/* Distractions */}
           {weeklyReport.distractions && Object.keys(weeklyReport.distractions).length > 0 && (
             <div className="card">
-              <h2>Common Distractions</h2>
+              <h2>⚠️ Common Distractions</h2>
               <div className="distractions-list">
-                {Object.entries(weeklyReport.distractions).map(([distraction, count]) => (
-                  <div key={distraction} className="distraction-item">
-                    <span className="distraction-name">{distraction}</span>
-                    <span className="distraction-count">{count} times</span>
-                  </div>
-                ))}
+                {Object.entries(weeklyReport.distractions).map(([distraction, count]) => {
+                  // Format distraction name: replace underscores with spaces and capitalize
+                  const formattedDistraction = distraction
+                    .split('_')
+                    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                    .join(' ');
+
+                  return (
+                    <div key={distraction} className="distraction-item">
+                      <span className="distraction-name">{formattedDistraction}</span>
+                      <span className="distraction-count">{count} {count === 1 ? 'time' : 'times'}</span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
