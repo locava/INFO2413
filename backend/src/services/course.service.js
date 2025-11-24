@@ -16,8 +16,11 @@ async function deleteCourse(courseId) {
 }
 
 async function getCoursesByStudent(studentId) {
-  // This function ensures a clean data layer between controller and query
   return courseQueries.getEnrolledCoursesByStudent(studentId);
+}
+
+async function getCoursesByInstructor(instructorId) {
+    return courseQueries.getCoursesByInstructor(instructorId);
 }
 
 module.exports = {
@@ -25,4 +28,5 @@ module.exports = {
   updateCourse,
   deleteCourse,
   getCoursesByStudent,
+  getCoursesByInstructor,
 };

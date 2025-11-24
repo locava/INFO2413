@@ -67,6 +67,17 @@ const courseQueries = {
     return result.rows[0];
   },
 
+  getCoursesByInstructor: async (instructorId) => {
+    const query = `
+      SELECT course_id, course_code, course_name, instructor_id
+      FROM public.courses
+      WHERE instructor_id = $1 AND is_active = true
+      ORDER BY course_code ASC;
+    `;
+    const result = await pool.query(query, [instructorId]);
+    return result.rows;
+  },
+
   getEnrolledCoursesByStudent: async (studentId) => {
         const query = `
             SELECT c.course_id, c.course_code, c.course_name, c.instructor_id
