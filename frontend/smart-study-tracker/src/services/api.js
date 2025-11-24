@@ -91,6 +91,9 @@ export const studentAPI = {
     apiRequest(`/api/student/study-sessions/${sessionId}`, {
       method: 'DELETE',
     }),
+
+  getCourses: () => 
+    apiRequest('/api/student/courses'),
 };
 
 // ============================================

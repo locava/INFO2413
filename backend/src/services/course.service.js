@@ -15,8 +15,14 @@ async function deleteCourse(courseId) {
   return courseQueries.deleteCourse(courseId);
 }
 
+async function getCoursesByStudent(studentId) {
+  // This function ensures a clean data layer between controller and query
+  return courseQueries.getEnrolledCoursesByStudent(studentId);
+}
+
 module.exports = {
   createCourse,
   updateCourse,
   deleteCourse,
+  getCoursesByStudent,
 };

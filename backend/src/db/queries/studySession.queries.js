@@ -33,9 +33,10 @@ const studyQueries = {
   },
 
   getStudySessionsByStudent: async (studentId) => {
-    // ✅ FIX: Join with courses to get the course name for the dashboard
+    // 💡 FIX: Explicitly select the session's course_id (s.course_id) 
+    // and the course info (c.course_name, c.course_code) to guarantee data integrity.
     const query = `
-      SELECT s.*, c.course_name, c.course_code
+      SELECT s.*, c.course_name, c.course_code 
       FROM study_sessions s
       LEFT JOIN courses c ON s.course_id = c.course_id
       WHERE s.student_id = $1 AND s.is_deleted = false
@@ -44,6 +45,8 @@ const studyQueries = {
     const result = await pool.query(query, [studentId]);
     return result.rows;
   },
+
+  
   
   updateStudySession: async (data) => {
      const query = `

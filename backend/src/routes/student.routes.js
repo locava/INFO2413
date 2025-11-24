@@ -22,4 +22,7 @@ router.put('/study-sessions/:id', studentController.updateStudySession);
 // DELETE /api/student/study-sessions/:id  (soft delete)
 router.delete('/study-sessions/:id', studentController.softDeleteStudySession);
 
+// GET /api/student/courses
+router.get('/courses', studentController.getStudentCourses);
+
 module.exports = router;

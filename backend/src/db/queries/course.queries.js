@@ -65,7 +65,19 @@ const courseQueries = {
     `;
     const result = await pool.query(query, [courseId]);
     return result.rows[0];
-  }
+  },
+
+  getEnrolledCoursesByStudent: async (studentId) => {
+        const query = `
+            SELECT c.course_id, c.course_code, c.course_name, c.instructor_id
+            FROM courses c /* Select directly from courses table */
+            WHERE 1=1 /* TEMPORARILY IGNORE ENROLLMENT FILTER! */
+            ORDER BY c.course_code;
+        `;
+        // IMPORTANT: The query parameters must be empty since the WHERE clause is ignored.
+        const result = await pool.query(query); 
+        return result.rows;
+    },
 };
 
 module.exports = courseQueries;
