@@ -39,9 +39,18 @@ async function getStudySessions(req, res, next) {
         return sendSuccess(res, [], 200); 
     }
 
-    // ✅ FIX: Added fallback here
+    // ✅ NEW: Extract filters from URL query parameters
+    const filters = {
+        subject: req.query.subject,
+        mood: req.query.mood,
+        startDate: req.query.startDate,
+        endDate: req.query.endDate,
+    };
+
     const realStudentId = student.student_id || student.user_id;
-    const sessions = await studySessionService.getSessionsByStudent(realStudentId);
+    
+    // ✅ NEW: Pass filters object to the service layer
+    const sessions = await studySessionService.getSessionsByStudent(realStudentId, filters);
 
     return sendSuccess(res, sessions, 200);
   } catch (err) {

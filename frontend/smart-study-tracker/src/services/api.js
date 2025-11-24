@@ -78,8 +78,21 @@ export const studentAPI = {
       body: JSON.stringify(sessionData),
     }),
 
-  getSessions: () =>
-    apiRequest('/api/student/study-sessions'),
+  // ✅ UPDATED: Accept filters and build query string
+  getSessions: (filters = {}) => {
+    // 1. Clean filters (remove empty strings like those from the Select component default)
+    const cleanFilters = Object.fromEntries(
+        Object.entries(filters).filter(([, v]) => v)
+    );
+    
+    // 2. Create URL search parameters
+    const queryString = new URLSearchParams(cleanFilters).toString();
+    
+    // 3. Append to the base endpoint
+    const endpoint = `/api/student/study-sessions${queryString ? `?${queryString}` : ''}`;
+    
+    return apiRequest(endpoint);
+  },
 
   updateSession: (sessionId, sessionData) =>
     apiRequest(`/api/student/study-sessions/${sessionId}`, {

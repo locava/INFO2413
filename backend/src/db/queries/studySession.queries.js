@@ -32,17 +32,52 @@ const studyQueries = {
     return result.rows[0];
   },
 
-  getStudySessionsByStudent: async (studentId) => {
-    // 💡 FIX: Explicitly select the session's course_id (s.course_id) 
-    // and the course info (c.course_name, c.course_code) to guarantee data integrity.
-    const query = `
-      SELECT s.*, c.course_name, c.course_code 
+  getStudySessionsByStudent: async (studentId, filters = {}) => {
+    // Base query selects sessions and joins to get course name
+    let baseQuery = `
+      SELECT s.*, c.course_name, c.course_code
       FROM study_sessions s
       LEFT JOIN courses c ON s.course_id = c.course_id
       WHERE s.student_id = $1 AND s.is_deleted = false
-      ORDER BY s.date DESC, s.start_time DESC
     `;
-    const result = await pool.query(query, [studentId]);
+    
+    const values = [studentId];
+    let paramIndex = 2;
+
+    // --- Subject Filter (Uses Course Name) ---
+    if (filters.subject) {
+      baseQuery += ` AND c.course_name ILIKE $${paramIndex}`;
+      values.push(`%${filters.subject}%`);
+      paramIndex++;
+    }
+
+    // --- Mood Filter ---
+    if (filters.mood) {
+      baseQuery += ` AND s.mood = $${paramIndex}`;
+      values.push(filters.mood);
+      paramIndex++;
+    }
+
+    // --- Time Range Filter: Start Date ---
+    if (filters.startDate) {
+      // Find sessions ON or AFTER the start date
+      baseQuery += ` AND s.date >= $${paramIndex}`;
+      values.push(filters.startDate);
+      paramIndex++;
+    }
+
+    // --- Time Range Filter: End Date ---
+    if (filters.endDate) {
+      // Find sessions ON or BEFORE the end date
+      baseQuery += ` AND s.date <= $${paramIndex}`;
+      values.push(filters.endDate);
+      paramIndex++;
+    }
+
+    // Final sorting
+    baseQuery += ` ORDER BY s.date DESC, s.start_time DESC`;
+    
+    const result = await pool.query(baseQuery, values);
     return result.rows;
   },
 

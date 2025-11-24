@@ -14,6 +14,14 @@ function ReportsPage() {
   const [sessions, setSessions] = useState([]); // Sessions for modification/deletion
   const [courses, setCourses] = useState([]); // Courses list needed by SessionList
   
+  // State for Search Filters
+  const [searchFilters, setSearchFilters] = useState({
+    subject: '', // This will now hold the selected course name/code
+    mood: '',
+    startDate: '',
+    endDate: '',
+  });
+
   // --- REPORT FILTERS & DATA ---
   const [reportType, setReportType] = useState('weekly');
   const [weeklyReport, setWeeklyReport] = useState(null);
@@ -28,12 +36,25 @@ function ReportsPage() {
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   });
 
+  // Mood options (copied from SessionList for consistency in Select)
+  const moodOptions = [
+    { value: '', label: 'Any Mood' },
+    { value: 'Very Productive', label: 'Very Productive' }, 
+    { value: 'Productive', label: 'Productive' }, 
+    { value: 'Focused', label: 'Focused' }, 
+    { value: 'Neutral', label: 'Neutral' }, 
+    { value: 'Tired', label: 'Tired' }, 
+    { value: 'Distracted', label: 'Distracted' }, 
+    { value: 'Stressed', label: 'Stressed' }
+  ];
+
+
   // Unified effect hook to fetch all necessary data
   useEffect(() => {
     if (user) {
       fetchData();
     }
-  }, [user, reportType, selectedMonth]);
+  }, [user, reportType, selectedMonth, searchFilters]);
 
   const fetchData = async () => {
     if (!user) return;
@@ -46,37 +67,20 @@ function ReportsPage() {
 
     try {
       // 1. Fetch History Data (Sessions and Courses)
+      const sessionsPromise = studentAPI.getSessions(searchFilters);
+      
       [sessionsResponse, coursesResponse] = await Promise.all([
-        studentAPI.getSessions(),
-        // NOTE: We assume studentAPI.getCourses() is the correct function 
-        // that hits the GET /api/student/courses endpoint.
-        studentAPI.getCourses() 
+        sessionsPromise,
+        studentAPI.getCourses()
       ]);
 
       // 2. Handle Fetched Data (Sessions and Courses)
       if (sessionsResponse.success) {
         setSessions(sessionsResponse.data);
-
-        // --- TEMPORARY DEBUGGING LOGS (Run ONLY after success) ---
-        if (sessionsResponse.data.length > 0) {
-            console.log("DEBUG A: FIRST SESSION COURSE_ID TYPE:", 
-                         typeof sessionsResponse.data[0].course_id, 
-                         sessionsResponse.data[0].course_id);
-            console.log("DEBUG A: ENTIRE FIRST SESSION:", sessionsResponse.data[0]);
-        }
       }
       
       if (coursesResponse.success) {
         setCourses(coursesResponse.data);
-
-        // This log is CRITICAL and must be provided:
-        if (coursesResponse.data.length > 0) {
-            console.log("DEBUG B: FIRST COURSE COURSE_ID TYPE:", 
-                        typeof coursesResponse.data[0].course_id, 
-                        coursesResponse.data[0].course_id);
-            console.log("DEBUG B: ENTIRE FIRST COURSE:", coursesResponse.data[0]);
-        }
-        // --- END TEMPORARY DEBUGGING LOGS ---
       }
 
       // 3. Fetch AI Reports (existing logic)
@@ -95,7 +99,6 @@ function ReportsPage() {
       }
 
     } catch (err) {
-      // console.error('Data fetch error:', err);
       setError(err.message || 'Failed to load data');
     } finally {
       setLoading(false);
@@ -103,7 +106,6 @@ function ReportsPage() {
   };
   
   // Function to only fetch reports (used after session update/delete)
-  // This is faster than calling fetchData() which refetches everything.
   const fetchReportsOnly = async () => {
       if (reportType === 'weekly') {
         const response = await aiAPI.getWeeklyReport(user.user_id);
@@ -122,30 +124,63 @@ function ReportsPage() {
     setSelectedMonth(e.target.value);
   };
   
+  // Handler for Search Input Changes
+  const handleFilterChange = (e) => {
+    setSearchFilters(prevFilters => ({
+      ...prevFilters,
+      [e.target.name]: e.target.value
+    }));
+  };
+
+  // Handler to clear all filters
+  const handleClearFilters = () => {
+    setSearchFilters({
+      subject: '',
+      mood: '',
+      startDate: '',
+      endDate: '',
+    });
+  };
+  
+  // Handler to block Enter key on inputs (to prevent the unwanted form submission)
+  const handleInputKeyDown = (e) => {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+    }
+  };
+  
   // --- HANDLERS FOR SESSIONLIST COMPONENT ---
   
   const handleSessionUpdated = (updatedSession) => {
-    // Replace the old session with the updated session in the state
     setSessions(prevSessions => 
       prevSessions.map(s => 
         s.session_id === updatedSession.session_id ? updatedSession : s
       )
     );
-    // Re-fetch reports to ensure charts and AI data are up-to-date
     fetchReportsOnly();
   };
 
   const handleSessionDeleted = (deletedSessionId) => {
-    // Filter out the deleted session from the state
     setSessions(prevSessions => 
       prevSessions.filter(s => s.session_id !== deletedSessionId)
     );
-    // Re-fetch reports to ensure charts and AI data are up-to-date
     fetchReportsOnly();
   };
   
+  // --- DATA TRANSFORMATION ---
+  // Prepare courses data for the Select component
+  const courseOptions = [
+    { value: '', label: 'Any Subject' }, // Default option
+    ...courses.map(course => ({
+      // Use the course code and name for both value and label for easier search filtering
+      value: course.course_name, 
+      label: `${course.course_code || ''} - ${course.course_name}`.trim(),
+    }))
+  ];
+
   // --- LOADING/ERROR STATES ---
   if (loading) {
+    // ... (Loading state rendering)
     return (
       <div className="reports-page">
         <div className="page-header">
@@ -168,6 +203,7 @@ function ReportsPage() {
   }
 
   if (error) {
+    // ... (Error state rendering)
     return (
       <div className="reports-page">
         <div className="page-header">
@@ -216,7 +252,7 @@ function ReportsPage() {
             borderBottom: pageView === 'reports' ? '3px solid #6366f1' : '3px solid transparent', 
             backgroundColor: 'transparent', 
             cursor: 'pointer',
-            fontWeight: pageView === 'reports' ? 'bold' : 'normal'
+            fontWeight: 'bold'
           }}
         >
           AI Reports
@@ -230,7 +266,7 @@ function ReportsPage() {
             borderBottom: pageView === 'history' ? '3px solid #6366f1' : '3px solid transparent', 
             backgroundColor: 'transparent', 
             cursor: 'pointer',
-            fontWeight: pageView === 'history' ? 'bold' : 'normal'
+            fontWeight: 'bold'
           }}
         >
           Session History & Edit
@@ -240,6 +276,7 @@ function ReportsPage() {
       {/* --- 1. AI REPORTS VIEW --- */}
       {pageView === 'reports' && (
         <>
+          {/* ... (AI Reports content remains unchanged) ... */}
           {/* Report Type Selector */}
           <div className="filter-bar" style={{ display: 'flex', gap: '20px', alignItems: 'flex-end', marginBottom: '20px' }}>
             <Select
@@ -443,6 +480,74 @@ function ReportsPage() {
           <div className="history-description" style={{ marginBottom: '20px', padding: '15px', background: '#f0f4ff', borderLeft: '5px solid #6366f1', borderRadius: '4px' }}>
             <p>Review and manage your logged study sessions. Use the **Edit** and **Delete** buttons to make changes.</p>
           </div>
+          
+          {/* Filters are now just in a DIV. No form submission is possible. */}
+          <div className="session-filter-bar" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px', marginBottom: '25px', padding: '15px', border: '1px solid #ddd', borderRadius: '8px', background: 'var(--white)' }}>
+            
+            {/* Subject/Course Filter */}
+            <Select
+                label="Study Subject"
+                name="subject"
+                value={searchFilters.subject}
+                onChange={handleFilterChange}
+                options={courseOptions} // Use the generated course options
+            />
+            
+            {/* Mood Filter */}
+            <Select
+                label="Mood"
+                name="mood"
+                value={searchFilters.mood}
+                onChange={handleFilterChange}
+                options={moodOptions}
+            />
+
+            {/* Time Range Start Date Filter */}
+            <div className="form-group">
+                <label htmlFor="startDate" style={{ fontSize: '0.875rem', fontWeight: '500' }}>Start Date</label>
+                <input
+                    type="date"
+                    id="startDate"
+                    name="startDate"
+                    value={searchFilters.startDate}
+                    onChange={handleFilterChange}
+                    style={{ padding: '10px', borderRadius: '4px', border: '1px solid #ccc', width: '100%', boxSizing: 'border-box' }}
+                />
+            </div>
+
+            {/* Time Range End Date Filter */}
+            <div className="form-group">
+                <label htmlFor="endDate" style={{ fontSize: '0.875rem', fontWeight: '500' }}>End Date</label>
+                <input
+                    type="date"
+                    id="endDate"
+                    name="endDate"
+                    value={searchFilters.endDate}
+                    onChange={handleFilterChange}
+                    style={{ padding: '10px', borderRadius: '4px', border: '1px solid #ccc', width: '100%', boxSizing: 'border-box' }}
+                />
+            </div>
+            
+            {/* Clear Filters Button */}
+            <button 
+                type="button" 
+                onClick={handleClearFilters}
+                style={{
+                    marginTop: 'auto', 
+                    padding: '10px 15px',
+                    backgroundColor: '#ef4444',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontWeight: 'bold'
+                }}
+            >
+                Clear Filters
+            </button>
+            
+          </div> {/* END session-filter-bar div */}
+          
           <SessionList 
             sessions={sessions} 
             courses={courses} 

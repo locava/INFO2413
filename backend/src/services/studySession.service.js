@@ -25,8 +25,8 @@ async function createSession(studentId, data) {
   return studyQueries.createStudySession(payload);
 }
 
-async function getSessionsByStudent(studentId) {
-  return studyQueries.getStudySessionsByStudent(studentId);
+async function getSessionsByStudent(studentId, filters) { // ✅ ACCEPT filters
+  return studyQueries.getStudySessionsByStudent(studentId, filters); // ✅ PASS filters
 }
 
 async function updateSession(studentId, sessionId, data) {
