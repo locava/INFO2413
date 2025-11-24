@@ -14,6 +14,10 @@ function InstructorDashboard() {
   const [studentsLoading, setStudentsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('overview'); // 'overview' or 'students'
+  const [searchQuery, setSearchQuery] = useState('');
+  const [reviewingStudent, setReviewingStudent] = useState(null);
+  const [studentLogs, setStudentLogs] = useState([]);
+  const [logsLoading, setLogsLoading] = useState(false);
 
   useEffect(() => {
     fetchCourses();
@@ -22,9 +26,11 @@ function InstructorDashboard() {
   useEffect(() => {
     if (selectedCourse) {
       fetchCourseReport(selectedCourse.course_id);
-      fetchCourseStudents(selectedCourse.course_id);
+      // Calls the student fetch function
+      fetchCourseStudents(selectedCourse.course_id); 
     }
-  }, [selectedCourse]);
+    // ✅ FIX: ADD searchQuery to the dependency array
+  }, [selectedCourse, searchQuery]);
 
   const fetchCourses = async () => {
     if (!user) return;
@@ -64,10 +70,12 @@ function InstructorDashboard() {
     }
   };
 
-  const fetchCourseStudents = async (courseId) => {
+  const fetchCourseStudents = async (courseId) => { // Removed direct filters param
     setStudentsLoading(true);
     try {
-      const response = await instructorAPI.getCourseStudents(courseId);
+      // ✅ PASS SEARCH QUERY (name filter)
+      const filters = { name: searchQuery }; 
+      const response = await instructorAPI.getCourseStudents(courseId, filters);
       if (response.success) {
         setStudents(response.data || []);
       }
@@ -77,6 +85,24 @@ function InstructorDashboard() {
     } finally {
       setStudentsLoading(false);
     }
+  };
+
+  const fetchStudentLogs = async (studentId, courseId) => {
+      setLogsLoading(true);
+      try {
+          const response = await instructorAPI.getStudentSessions(studentId, courseId); 
+          if (response.success) {
+              setStudentLogs(response.data || []);
+              
+              const student = students.find(s => s.user_id === studentId); 
+              setReviewingStudent(student);
+          }
+      } catch (err) {
+          console.error('Failed to load student sessions:', err);
+          setStudentLogs([]);
+      } finally {
+          setLogsLoading(false);
+      }
   };
 
   if (loading) {
@@ -137,6 +163,8 @@ function InstructorDashboard() {
             onChange={(e) => {
               const course = courses.find(c => c.course_id === e.target.value);
               setSelectedCourse(course);
+              // Reset search state when course changes
+              setSearchQuery('');
             }}
             className="course-select"
           >
@@ -167,7 +195,7 @@ function InstructorDashboard() {
         </div>
       )}
 
-      {/* Overview Tab */}
+      {/* Overview Tab (Content remains the same) */}
       {activeTab === 'overview' && (
         <>
           {reportLoading ? (
@@ -341,7 +369,7 @@ function InstructorDashboard() {
           )}
 
           {/* No Data Message */}
-          {!courseReport.average_hours_per_student && courseReport.average_hours_per_student !== 0 && !courseReport.privacy_notice && (
+          {!courseReport?.average_hours_per_student && courseReport?.average_hours_per_student !== 0 && !courseReport?.privacy_notice && (
             <div className="empty-state">
               <p>No study session data available for this course in the selected time period.</p>
             </div>
@@ -358,6 +386,18 @@ function InstructorDashboard() {
       {/* Students Tab */}
       {activeTab === 'students' && (
         <>
+          {/* ✅ NEW: Search Input (Requirement 2) */}
+          <div className="students-search-bar" style={{ marginBottom: '20px' }}>
+              <input
+                  type="text"
+                  placeholder="Search students by name..."
+                  value={searchQuery}
+                  // fetchCourseStudents is triggered via useEffect on searchQuery change
+                  onChange={(e) => setSearchQuery(e.target.value)} 
+                  style={{ padding: '10px', width: '100%', borderRadius: '5px', border: '1px solid #ccc' }}
+              />
+          </div>
+
           {studentsLoading ? (
             <div className="loading-state">
               <div className="spinner"></div>
@@ -371,7 +411,8 @@ function InstructorDashboard() {
               </div>
               <div className="students-grid">
                 {students.map((student, index) => (
-                  <div key={student.user_id || index} className="student-card">
+                  // IMPORTANT: Ensure you use student.user_id or student.student_id for the key
+                  <div key={student.user_id || student.student_id || index} className="student-card">
                     <div className="student-avatar">
                       {student.name?.charAt(0).toUpperCase() || 'S'}
                     </div>
@@ -390,6 +431,24 @@ function InstructorDashboard() {
                           )}
                         </div>
                       )}
+                      
+                      {/* ✅ NEW: Review Logs Button (Requirement 3) */}
+                      <button 
+                          // Use student.user_id (or whichever ID matches the study_sessions table foreign key)
+                          onClick={() => fetchStudentLogs(student.student_id, selectedCourse.course_id)}
+                          className="btn-review-logs"
+                          style={{ 
+                              marginTop: '10px', 
+                              padding: '8px 15px', 
+                              backgroundColor: '#6366f1', 
+                              color: 'white', 
+                              border: 'none',
+                              borderRadius: '4px',
+                              cursor: 'pointer'
+                          }}
+                      >
+                        Review Logs
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -397,7 +456,80 @@ function InstructorDashboard() {
             </div>
           ) : (
             <div className="empty-state">
-              <p>No students enrolled in this course yet.</p>
+              <p>No students match your search criteria or are enrolled.</p>
+            </div>
+          )}
+          
+          {/* ✅ NEW: Modal/Review View Panel */}
+          {reviewingStudent && (
+            <div className="student-logs-modal" style={{ 
+                position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', 
+                backgroundColor: 'rgba(0,0,0,0.7)', zIndex: 1000, overflowY: 'auto' 
+            }}>
+                <div className="modal-content-container" style={{ 
+                    backgroundColor: 'white', margin: '50px auto', padding: '30px', 
+                    borderRadius: '8px', maxWidth: '800px', boxShadow: '0 5px 15px rgba(0,0,0,0.3)'
+                }}>
+                    <button 
+                        onClick={() => setReviewingStudent(null)} 
+                        style={{ float: 'right', background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer' }}
+                    >
+                        &times;
+                    </button>
+                    <h2>Study Logs for {reviewingStudent.name}</h2>
+                    <p style={{ marginBottom: '20px' }}>Course: **{selectedCourse.course_code} - {selectedCourse.course_name}**</p>
+                    
+                    {logsLoading ? (
+                        <p>Loading logs...</p>
+                    ) : studentLogs.length > 0 ? (
+                        <div className="logs-list" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '20px' }}>
+                            {studentLogs.map(log => (
+                                <div 
+                                    key={log.session_id} 
+                                    className="log-item" 
+                                    style={{ 
+                                        border: '1px solid #ddd', 
+                                        padding: '15px', 
+                                        borderRadius: '6px',
+                                        marginBottom: '10px',
+                                        
+                                        // Ensure vertical stacking of the main content lines
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        gap: '10px',
+                                    }}
+                                >
+                                    {/* Inner Flex Container to manage horizontal spacing for all metrics */}
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
+                                        
+                                        {/* Date/Time */}
+                                        <div style={{ fontWeight: 'bold', whiteSpace: 'nowrap', marginRight: '20px' }}>
+                                            Date: {new Date(log.date).toLocaleDateString()} at {new Date(log.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        </div>
+                                        
+                                        {/* Duration */}
+                                        <div style={{ whiteSpace: 'nowrap', marginRight: '20px' }}>
+                                            Duration: {log.duration_minutes} minutes
+                                        </div>
+                                        
+                                        {/* Mood */}
+                                        <div style={{ whiteSpace: 'nowrap', marginRight: '20px' }}>
+                                            Mood: **{log.mood}**
+                                        </div>
+                                        
+                                        {/* Distractions */}
+                                        <div style={{ whiteSpace: 'nowrap' }}>
+                                            Distractions: {log.distractions || 'None recorded'}
+                                        </div>
+                                        
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <p>No study sessions found for this student in this course.</p>
+                    )}
+                </div>
             </div>
           )}
         </>

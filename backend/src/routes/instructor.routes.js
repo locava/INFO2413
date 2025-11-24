@@ -12,8 +12,11 @@ router.get('/courses', instructorController.getCourses);
 // ----------------------------------------------------
 router.use(requireRole('Instructor'));
 
-// Get students for a specific course
+// Get students for a specific course (now supports search query params)
 router.get('/course/:id/students', instructorController.getStudents);
+
+// ✅ NEW: Get individual student sessions for review
+router.get('/student/:studentId/sessions/:courseId', instructorController.getStudentSessions);
 
 // Get reports for a specific course
 router.get('/reports/course/:id', instructorController.getCourseReport);

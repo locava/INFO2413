@@ -24,8 +24,8 @@ const instructorQueries = {
   },
 
   // Used by: Instructor Dashboard (Get students in my course)
-  getStudentsByCourseId: async (courseId) => {
-    const query = `
+  getStudentsByCourseId: async (courseId, filters = {}) => { // ✅ MODIFIED to accept filters
+    let baseQuery = `
       SELECT
         s.user_id as student_id,
         s.student_number,
@@ -36,9 +36,39 @@ const instructorQueries = {
       JOIN students s ON e.student_id = s.user_id
       JOIN users u ON s.user_id = u.user_id
       WHERE e.course_id = $1
-      ORDER BY u.name ASC
     `;
-    const result = await pool.query(query, [courseId]);
+    const values = [courseId];
+    let paramIndex = 2;
+    
+    // ✅ NEW: Name Search Filter
+    if (filters.name) {
+        baseQuery += ` AND u.name ILIKE $${paramIndex}`;
+        values.push(`%${filters.name}%`);
+        paramIndex++;
+    }
+    
+    // NOTE: Academic performance search logic would be added here (e.g., JOIN performance_records)
+
+    baseQuery += ` ORDER BY u.name ASC`;
+
+    const result = await pool.query(baseQuery, values);
+    return result.rows;
+  },
+
+  getStudentSessionsForCourse: async (studentId, courseId) => {
+    const query = `
+        SELECT
+            ss.session_id,
+            ss.date,
+            ss.start_time,
+            ss.duration_minutes,
+            ss.mood,
+            ss.distractions
+        FROM study_sessions ss
+        WHERE ss.student_id = $1 AND ss.course_id = $2 AND ss.is_deleted = false
+        ORDER BY ss.date DESC;
+    `;
+    const result = await pool.query(query, [studentId, courseId]);
     return result.rows;
   },
 
@@ -64,5 +94,7 @@ instructorQueries.getCourseStudents = instructorQueries.getStudentsByCourseId;
 
 // ✅ FIX: Create alias for getCourseReport
 instructorQueries.getCourseReport = instructorQueries.getCourseStats;
+
+instructorQueries.getStudentSessions = instructorQueries.getStudentSessionsForCourse;
 
 module.exports = instructorQueries;

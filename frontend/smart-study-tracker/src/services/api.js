@@ -165,17 +165,23 @@ export const aiAPI = {
 };
 
 // ============================================
-// INSTRUCTOR API
+// INSTRUCTOR API (in api.js)
 // ============================================
 export const instructorAPI = {
   getCourses: () =>
     apiRequest('/api/instructor/courses'),
 
-  getCourseStudents: (courseId) =>
-    apiRequest(`/api/instructor/course/${courseId}/students`),
-
+  getCourseStudents: (courseId, filters = {}) => {
+    const queryString = new URLSearchParams(filters).toString();
+    const endpoint = `/api/instructor/course/${courseId}/students${queryString ? `?${queryString}` : ''}`;
+    return apiRequest(endpoint);
+  },
+  
   getCourseStats: (courseId) =>
     apiRequest(`/api/instructor/course/${courseId}/stats`),
+    
+  getStudentSessions: (studentId, courseId) => 
+    apiRequest(`/api/instructor/student/${studentId}/sessions/${courseId}`),
 };
 
 // ============================================
