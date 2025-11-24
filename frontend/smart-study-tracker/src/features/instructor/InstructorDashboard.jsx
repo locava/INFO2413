@@ -2,9 +2,14 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { instructorAPI, aiAPI } from '../../services/api';
 import './InstructorDashboard.css';
+// 💡 Add useNavigate to handle navigation
+import { useNavigate } from 'react-router-dom';
 
 function InstructorDashboard() {
   const { user } = useAuth();
+  // 💡 Initialize useNavigate
+  const navigate = useNavigate();
+
   const [courses, setCourses] = useState([]);
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [courseReport, setCourseReport] = useState(null);
@@ -14,6 +19,8 @@ function InstructorDashboard() {
   const [studentsLoading, setStudentsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('overview'); // 'overview' or 'students'
+  
+  // State for Search and Log Review
   const [searchQuery, setSearchQuery] = useState('');
   const [reviewingStudent, setReviewingStudent] = useState(null);
   const [studentLogs, setStudentLogs] = useState([]);
@@ -23,14 +30,13 @@ function InstructorDashboard() {
     fetchCourses();
   }, [user]);
 
+  // Effect 2: Runs when course changes OR when search query changes
   useEffect(() => {
     if (selectedCourse) {
       fetchCourseReport(selectedCourse.course_id);
-      // Calls the student fetch function
       fetchCourseStudents(selectedCourse.course_id); 
     }
-    // ✅ FIX: ADD searchQuery to the dependency array
-  }, [selectedCourse, searchQuery]);
+  }, [selectedCourse, searchQuery]); // Dependency includes searchQuery
 
   const fetchCourses = async () => {
     if (!user) return;
@@ -70,10 +76,10 @@ function InstructorDashboard() {
     }
   };
 
-  const fetchCourseStudents = async (courseId) => { // Removed direct filters param
+  const fetchCourseStudents = async (courseId) => {
     setStudentsLoading(true);
     try {
-      // ✅ PASS SEARCH QUERY (name filter)
+      // PASS SEARCH QUERY (name filter)
       const filters = { name: searchQuery }; 
       const response = await instructorAPI.getCourseStudents(courseId, filters);
       if (response.success) {
@@ -94,6 +100,7 @@ function InstructorDashboard() {
           if (response.success) {
               setStudentLogs(response.data || []);
               
+              // Use user_id for lookup consistency
               const student = students.find(s => s.user_id === studentId); 
               setReviewingStudent(student);
           }
@@ -146,8 +153,28 @@ function InstructorDashboard() {
       <div className="page-header">
         <div>
           <h1>Instructor Dashboard</h1>
-          <p className="page-subtitle">Welcome, {user?.name}</p>
+          <p className="page-subtitle">Manage your courses and review student performance</p>
         </div>
+        
+        {/* ✅ NEW: EDIT PROFILE BUTTON */}
+        <button 
+            className="btn-secondary" 
+            onClick={() => navigate('/instructor/profile')} // Navigate to the profile page
+            style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '0.5rem', 
+                padding: '8px 15px', 
+                border: '1px solid #ccc',
+                borderRadius: '4px',
+                background: 'var(--white)',
+                cursor: 'pointer'
+            }}
+        >
+          <span>⚙️</span>
+          <span>Edit Profile</span>
+        </button>
+        
       </div>
 
       {/* Course Selector */}
@@ -386,7 +413,7 @@ function InstructorDashboard() {
       {/* Students Tab */}
       {activeTab === 'students' && (
         <>
-          {/* ✅ NEW: Search Input (Requirement 2) */}
+          {/* Search Input (Requirement 2) */}
           <div className="students-search-bar" style={{ marginBottom: '20px' }}>
               <input
                   type="text"
@@ -432,7 +459,7 @@ function InstructorDashboard() {
                         </div>
                       )}
                       
-                      {/* ✅ NEW: Review Logs Button (Requirement 3) */}
+                      {/* Review Logs Button (Requirement 3) */}
                       <button 
                           // Use student.user_id (or whichever ID matches the study_sessions table foreign key)
                           onClick={() => fetchStudentLogs(student.student_id, selectedCourse.course_id)}
@@ -460,7 +487,7 @@ function InstructorDashboard() {
             </div>
           )}
           
-          {/* ✅ NEW: Modal/Review View Panel */}
+          {/* Modal/Review View Panel */}
           {reviewingStudent && (
             <div className="student-logs-modal" style={{ 
                 position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', 
@@ -539,4 +566,3 @@ function InstructorDashboard() {
 }
 
 export default InstructorDashboard;
-
