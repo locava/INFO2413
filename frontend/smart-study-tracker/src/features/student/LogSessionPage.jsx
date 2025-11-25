@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-// ✅ FIX 1: Import instructorAPI to fetch courses
-import { studentAPI, instructorAPI } from '../../services/api';
+// ✅ FIX: Import only studentAPI to fetch enrolled courses
+import { studentAPI } from '../../services/api';
 import Input from '../../components/ui/Input';
 import Select from '../../components/ui/Select';
 import Textarea from '../../components/ui/Textarea';
@@ -49,19 +49,19 @@ function LogSessionPage() {
     'fatigue'
   ];
 
-  // ✅ FIX 2: Fetch courses from Database instead of hardcoding
+  // ✅ FIX: Fetch student's enrolled courses from Database
   useEffect(() => {
     const fetchCourses = async () => {
       try {
-        // We use the existing endpoint to get courses
-        const response = await instructorAPI.getCourses();
-        
+        // Use studentAPI to get only enrolled courses
+        const response = await studentAPI.getCourses();
+
         if (response.success) {
           setCourses(response.data);
         }
       } catch (error) {
         console.error("Failed to fetch courses:", error);
-        // Optional: Handle error (e.g. show a toast notification)
+        setErrors({ submit: 'Failed to load courses. Please refresh the page.' });
       }
     };
 
