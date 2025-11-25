@@ -106,12 +106,12 @@ function InstructorDashboard() {
   const fetchStudentLogs = async (studentId, courseId) => {
       setLogsLoading(true);
       try {
-          const response = await instructorAPI.getStudentSessions(studentId, courseId); 
+          const response = await instructorAPI.getStudentSessions(studentId, courseId);
           if (response.success) {
               setStudentLogs(response.data || []);
-              
-              // Use user_id for lookup consistency
-              const student = students.find(s => s.user_id === studentId); 
+
+              // Use student_id for lookup consistency (backend returns student_id)
+              const student = students.find(s => s.student_id === studentId);
               setReviewingStudent(student);
           }
       } catch (err) {
@@ -582,8 +582,11 @@ function InstructorDashboard() {
                     backgroundColor: 'white', margin: '50px auto', padding: '30px', 
                     borderRadius: '8px', maxWidth: '800px', boxShadow: '0 5px 15px rgba(0,0,0,0.3)'
                 }}>
-                    <button 
-                        onClick={() => setReviewingStudent(null)} 
+                    <button
+                        onClick={() => {
+                          setReviewingStudent(null);
+                          setStudentLogs([]);
+                        }}
                         style={{ float: 'right', background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer' }}
                     >
                         &times;

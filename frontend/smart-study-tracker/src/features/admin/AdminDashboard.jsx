@@ -1057,6 +1057,11 @@ const executeDelete = async (user) => {
                 const healthScore = Math.max(0, Math.min(100, 100 - totalDeduction));
                 const healthClass = healthScore >= 80 ? 'excellent' : healthScore >= 60 ? 'good' : healthScore >= 40 ? 'fair' : 'poor';
 
+                // Calculate total issues count
+                const totalIssues = dataQuality.courses_with_no_enrollments +
+                                   dataQuality.students_with_no_sessions +
+                                   dataQuality.sessions_with_missing_fields;
+
                 return (
                   <>
                     <div className={`health-score-value ${healthClass}`}>
