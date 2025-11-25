@@ -995,15 +995,13 @@ const executeDelete = async (user) => {
                 <div className="quality-metric">
                   <span className="metric-label">Active Students</span>
                   <span className="metric-value success">
-                    {users.filter(u => u.role === 'Student').length - dataQuality.students_with_no_sessions}
+                    {dataQuality.active_students || 0}
                   </span>
                 </div>
                 <div className="quality-metric">
                   <span className="metric-label">Engagement Rate</span>
                   <span className="metric-value info">
-                    {users.filter(u => u.role === 'Student').length > 0
-                      ? Math.round(((users.filter(u => u.role === 'Student').length - dataQuality.students_with_no_sessions) / users.filter(u => u.role === 'Student').length) * 100)
-                      : 0}%
+                    {dataQuality.engagement_rate || 0}%
                   </span>
                 </div>
               </div>
@@ -1051,11 +1049,12 @@ const executeDelete = async (user) => {
             <h3>📈 Overall System Health</h3>
             <div className="health-score">
               {(() => {
-                const totalIssues =
-                  dataQuality.sessions_with_missing_fields +
-                  dataQuality.students_with_no_sessions +
-                  dataQuality.courses_with_no_enrollments;
-                const healthScore = Math.max(0, 100 - (totalIssues * 5));
+                // Weight different issues differently
+                const criticalIssues = dataQuality.courses_with_no_enrollments * 10; // Critical
+                const moderateIssues = dataQuality.students_with_no_sessions * 2; // Moderate
+                const minorIssues = dataQuality.sessions_with_missing_fields * 1; // Minor
+                const totalDeduction = criticalIssues + moderateIssues + minorIssues;
+                const healthScore = Math.max(0, Math.min(100, 100 - totalDeduction));
                 const healthClass = healthScore >= 80 ? 'excellent' : healthScore >= 60 ? 'good' : healthScore >= 40 ? 'fair' : 'poor';
 
                 return (

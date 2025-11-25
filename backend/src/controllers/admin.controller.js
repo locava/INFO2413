@@ -277,11 +277,12 @@ const adminController = {
           WHERE date >= CURRENT_DATE - INTERVAL '7 days'
         `),
 
-        // Users with no sessions
+        // ACTIVE users with no sessions (FIXED: added status filter)
         pool.query(`
           SELECT COUNT(*) as count
           FROM users u
           WHERE u.role = 'Student'
+          AND u.status = 'Active'
           AND NOT EXISTS (
             SELECT 1 FROM study_sessions ss WHERE ss.student_id = u.user_id
           )
@@ -302,15 +303,57 @@ const adminController = {
           SELECT AVG(duration_minutes) as avg_duration
           FROM study_sessions
           WHERE duration_minutes > 0
+        `),
+
+        // NEW: Active students WITH sessions
+        pool.query(`
+          SELECT COUNT(DISTINCT ss.student_id) as count
+          FROM study_sessions ss
+          JOIN users u ON ss.student_id = u.user_id
+          WHERE u.status = 'Active' AND u.role = 'Student'
+        `),
+
+        // NEW: Total active students
+        pool.query(`
+          SELECT COUNT(*) as count
+          FROM users
+          WHERE role = 'Student' AND status = 'Active'
+        `),
+
+        // NEW: Active courses
+        pool.query(`
+          SELECT COUNT(*) as count
+          FROM courses
+          WHERE is_active = true
+        `),
+
+        // NEW: Total enrollments
+        pool.query(`
+          SELECT COUNT(*) as count
+          FROM enrollments
         `)
       ]);
+
+      const activeStudentsWithSessions = parseInt(queries[5].rows[0].count);
+      const totalActiveStudents = parseInt(queries[6].rows[0].count);
+      const studentsWithNoSessions = parseInt(queries[2].rows[0].count);
+
+      // Calculate engagement rate: (students with sessions / total students) * 100
+      const engagementRate = totalActiveStudents > 0 
+        ? ((activeStudentsWithSessions / totalActiveStudents) * 100).toFixed(1)
+        : 0;
 
       const dataQuality = {
         sessions_with_missing_fields: parseInt(queries[0].rows[0].count),
         sessions_last_7_days: parseInt(queries[1].rows[0].count),
-        students_with_no_sessions: parseInt(queries[2].rows[0].count),
+        students_with_no_sessions: studentsWithNoSessions,
         courses_with_no_enrollments: parseInt(queries[3].rows[0].count),
-        avg_session_duration_minutes: parseFloat(queries[4].rows[0].avg_duration || 0).toFixed(1)
+        avg_session_duration_minutes: parseFloat(queries[4].rows[0].avg_duration || 0).toFixed(1),
+        active_students: activeStudentsWithSessions,
+        total_active_students: totalActiveStudents,
+        engagement_rate: parseFloat(engagementRate),
+        active_courses: parseInt(queries[7].rows[0].count),
+        total_enrollments: parseInt(queries[8].rows[0].count)
       };
 
       res.json({ success: true, data: dataQuality });
