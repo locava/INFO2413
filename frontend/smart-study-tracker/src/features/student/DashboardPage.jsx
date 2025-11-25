@@ -11,6 +11,7 @@ function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [weeklyReport, setWeeklyReport] = useState(null);
   const [sessions, setSessions] = useState([]);
+  const [feedback, setFeedback] = useState([]);
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -24,10 +25,11 @@ function DashboardPage() {
       setLoading(true);
       setError(null);
 
-      // Fetch weekly report and recent sessions in parallel
-      const [reportResponse, sessionsResponse] = await Promise.all([
+      // Fetch weekly report, recent sessions, and feedback in parallel
+      const [reportResponse, sessionsResponse, feedbackResponse] = await Promise.all([
         aiAPI.getWeeklyReport(user.user_id),
-        studentAPI.getSessions()
+        studentAPI.getSessions(),
+        studentAPI.getFeedback()
       ]);
 
       if (reportResponse.success) {
@@ -36,6 +38,10 @@ function DashboardPage() {
 
       if (sessionsResponse.success) {
         setSessions(sessionsResponse.data);
+      }
+
+      if (feedbackResponse.success) {
+        setFeedback(feedbackResponse.data || []);
       }
     } catch (err) {
       console.error('Dashboard data fetch error:', err);
@@ -282,6 +288,39 @@ function DashboardPage() {
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Feedback & Tips Section (FR-I4 - student view) */}
+      {feedback && feedback.length > 0 && (
+        <div className="card feedback-card">
+          <div className="card-header">
+            <h2>💬 Feedback & Tips from Instructors</h2>
+            <span className="feedback-count-badge">{feedback.length} messages</span>
+          </div>
+          <div className="feedback-list-student">
+            {feedback.slice(0, 5).map((item) => (
+              <div key={item.feedback_id} className="feedback-item-student">
+                <div className="feedback-header-student">
+                  <span className={`feedback-type-badge ${item.feedback_type.toLowerCase()}`}>
+                    {item.feedback_type.replace('_', ' ')}
+                  </span>
+                  <span className="feedback-course">{item.course_name}</span>
+                </div>
+                <div className="feedback-message-student">
+                  {item.message}
+                </div>
+                <div className="feedback-meta-student">
+                  From: {item.instructor_name} • {new Date(item.created_at).toLocaleDateString()}
+                </div>
+              </div>
+            ))}
+          </div>
+          {feedback.length > 5 && (
+            <div className="feedback-more">
+              <p>+ {feedback.length - 5} more messages</p>
+            </div>
+          )}
         </div>
       )}
     </div>

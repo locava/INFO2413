@@ -8,30 +8,42 @@ function AdminDashboard() {
   const [systemReport, setSystemReport] = useState(null);
   const [users, setUsers] = useState([]);
   const [courses, setCourses] = useState([]);
+  const [thresholds, setThresholds] = useState([]);
   const [alerts, setAlerts] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [dataQuality, setDataQuality] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState('overview'); // 'overview', 'users', 'courses', 'alerts', 'data-quality'
-  
+  const [activeTab, setActiveTab] = useState('overview'); // 'overview', 'users', 'courses', 'thresholds', 'alerts', 'data-quality'
+
   // State for Instructor Creation Form
   const [isCreatingInstructor, setIsCreatingInstructor] = useState(false);
   const [newInstructorData, setNewInstructorData] = useState({
     name: '', email: '', phone: '', workingId: '', department: '', password: 'password123', role: 'Instructor',
   });
-  
+
   // State for Course Creation
   const [isCreatingCourse, setIsCreatingCourse] = useState(false);
   const [newCourseData, setNewCourseData] = useState({
-    courseName: '', courseCode: '', instructorId: '', 
+    courseName: '', courseCode: '', instructorId: '',
   });
-  const [availableInstructors, setAvailableInstructors] = useState([]); 
+  const [availableInstructors, setAvailableInstructors] = useState([]);
 
   const [formMessage, setFormMessage] = useState({ type: '', text: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // 🛑 REMOVED: userToDelete state is no longer needed
+  // User management states
+  const [showAddUserModal, setShowAddUserModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [newUser, setNewUser] = useState({
+    name: '',
+    email: '',
+    password: '',
+    role: 'Student',
+    phone: '',
+    dob: ''
+  });
 
   useEffect(() => {
     fetchData();
@@ -42,10 +54,11 @@ function AdminDashboard() {
     setError(null);
 
     try {
-      const [reportResponse, usersResponse, coursesResponse, alertsResponse, notificationsResponse, dataQualityResponse] = await Promise.all([
+      const [reportResponse, usersResponse, coursesResponse, thresholdsResponse, alertsResponse, notificationsResponse, dataQualityResponse] = await Promise.all([
         aiAPI.getSystemReport(),
         adminAPI.getUsers(),
         adminAPI.getCourses(),
+        adminAPI.getThresholds(),
         adminAPI.getAlerts(20),
         adminAPI.getNotifications(20),
         adminAPI.getDataQuality()
@@ -57,11 +70,26 @@ function AdminDashboard() {
         const instructors = usersResponse.data.filter(u => u.role === 'Instructor');
         setAvailableInstructors(instructors);
       }
-      if (coursesResponse.success) setCourses(coursesResponse.data || []);
-      if (alertsResponse.success) setAlerts(alertsResponse.data || []);
-      if (notificationsResponse.success) setNotifications(notificationsResponse.data || []);
-      if (dataQualityResponse.success) setDataQuality(dataQualityResponse.data);
-      
+
+      if (coursesResponse.success) {
+        setCourses(coursesResponse.data || []);
+      }
+
+      if (thresholdsResponse.success) {
+        setThresholds(thresholdsResponse.data || []);
+      }
+
+      if (alertsResponse.success) {
+        setAlerts(alertsResponse.data || []);
+      }
+
+      if (notificationsResponse.success) {
+        setNotifications(notificationsResponse.data || []);
+      }
+
+      if (dataQualityResponse.success) {
+        setDataQuality(dataQualityResponse.data);
+      }
     } catch (err) {
       setError(err.message || 'Failed to load system data');
     } finally {
@@ -194,6 +222,58 @@ const executeDelete = async (user) => {
         setLoading(false);
     }
 };
+
+  const handleAddUser = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await adminAPI.createUser(newUser);
+      if (response.success) {
+        alert('✅ User created successfully!');
+        setShowAddUserModal(false);
+        setNewUser({ name: '', email: '', password: '', role: 'Student', phone: '', dob: '' });
+        fetchData(); // Refresh user list
+      }
+    } catch (err) {
+      alert('❌ Failed to create user: ' + (err.message || 'Unknown error'));
+    }
+  };
+
+  const handleDeleteUser = async () => {
+    if (!selectedUser) return;
+
+    try {
+      const response = await adminAPI.deleteUser(selectedUser.user_id);
+      if (response.success) {
+        alert('✅ User deleted successfully!');
+        setShowDeleteConfirm(false);
+        setSelectedUser(null);
+        fetchData(); // Refresh user list
+      }
+    } catch (err) {
+      alert('❌ Failed to delete user: ' + (err.message || 'Unknown error'));
+    }
+  };
+
+  const confirmDelete = (user) => {
+    setSelectedUser(user);
+    setShowDeleteConfirm(true);
+  };
+
+  const handleUpdateThreshold = async (thresholdId, valueNumeric, valueText) => {
+    try {
+      const response = await adminAPI.updateThreshold(thresholdId, {
+        valueNumeric,
+        valueText
+      });
+
+      if (response.success) {
+        alert('✅ Threshold updated successfully!');
+        fetchData(); // Refresh thresholds
+      }
+    } catch (err) {
+      alert('❌ Failed to update threshold: ' + (err.message || 'Unknown error'));
+    }
+  };
 
   if (loading) {
     return (
@@ -511,6 +591,12 @@ const executeDelete = async (user) => {
           📚 Courses ({courses.length})
         </button>
         <button
+          className={`tab-button ${activeTab === 'thresholds' ? 'active' : ''}`}
+          onClick={() => setActiveTab('thresholds')}
+        >
+          ⚙️ Thresholds ({thresholds.length})
+        </button>
+        <button
           className={`tab-button ${activeTab === 'alerts' ? 'active' : ''}`}
           onClick={() => setActiveTab('alerts')}
         >
@@ -618,7 +704,17 @@ const executeDelete = async (user) => {
         <div className="card">
           <div className="card-header">
             <h2>👥 User Management</h2>
-            <span className="user-count-badge">{users.length} total users</span>
+            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+              <span className="user-count-badge">{users.length} total users</span>
+              <button
+                className="btn-primary"
+                onClick={() => setShowAddUserModal(true)}
+                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+              >
+                <span>➕</span>
+                <span>Add User</span>
+              </button>
+            </div>
           </div>
 
           {users.length > 0 ? (
@@ -631,7 +727,6 @@ const executeDelete = async (user) => {
                     <th>Role</th>
                     <th>Status</th>
                     <th>Joined</th>
-                    {/* Add action column later: <th>Actions</th> */}
                     <th>Actions</th>
                   </tr>
                 </thead>
@@ -659,22 +754,19 @@ const executeDelete = async (user) => {
                         {user.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'}
                       </td>
                       <td>
-                        <button 
-                          onClick={() => executeDelete(user)}
+                        <button
+                          className="btn-danger-small"
+                          onClick={() => confirmDelete(user)}
+                          disabled={user.role === 'Administrator'}
+                          title={user.role === 'Administrator' ? 'Cannot delete admin' : 'Delete user'}
                           style={{
-                            backgroundColor: 'transparent',
-                            border: 'none',
-                            color: '#dc2626', // Red color for delete
-                            cursor: 'pointer',
-                            fontSize: '18px',
-                            opacity: user.role === 'Administrator' ? 0.5 : 1, // Optional: Dim if Admin
-                            pointerEvents: user.role === 'Administrator' ? 'none' : 'auto' // Prevent deleting admin
+                            padding: '0.4rem 0.8rem',
+                            fontSize: '0.85rem',
+                            backgroundColor: user.role === 'Administrator' ? '#ccc' : '#dc3545',
+                            cursor: user.role === 'Administrator' ? 'not-allowed' : 'pointer'
                           }}
-                          title={`Delete ${user.name}`}
-                          // Prevent deleting the user if they are the Admin
-                          disabled={user.role === 'Administrator'} 
                         >
-                          Delete
+                          🗑️ Delete
                         </button>
                       </td>
                     </tr>
@@ -729,6 +821,34 @@ const executeDelete = async (user) => {
             </div>
           ) : (
             <p className="no-data">No courses found</p>
+          )}
+        </div>
+      )}
+
+      {/* Thresholds Tab */}
+      {activeTab === 'thresholds' && (
+        <div className="card">
+          <div className="card-header">
+            <h2>⚙️ System Thresholds Configuration</h2>
+            <span className="user-count-badge">{thresholds.length} thresholds</span>
+          </div>
+
+          <div className="thresholds-info">
+            <p>Configure system-wide thresholds and parameters. Changes take effect immediately.</p>
+          </div>
+
+          {thresholds.length > 0 ? (
+            <div className="thresholds-grid">
+              {thresholds.map((threshold) => (
+                <ThresholdCard
+                  key={threshold.threshold_id}
+                  threshold={threshold}
+                  onUpdate={handleUpdateThreshold}
+                />
+              ))}
+            </div>
+          ) : (
+            <p className="no-data">No thresholds configured</p>
           )}
         </div>
       )}
@@ -958,6 +1078,207 @@ const executeDelete = async (user) => {
               })()}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Add User Modal */}
+      {showAddUserModal && (
+        <div className="modal-overlay" onClick={() => setShowAddUserModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>➕ Add New User</h2>
+              <button className="modal-close" onClick={() => setShowAddUserModal(false)}>✕</button>
+            </div>
+            <form onSubmit={handleAddUser} className="modal-form">
+              <div className="form-group">
+                <label>Full Name *</label>
+                <input
+                  type="text"
+                  value={newUser.name}
+                  onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
+                  required
+                  placeholder="Enter full name"
+                />
+              </div>
+              <div className="form-group">
+                <label>Email *</label>
+                <input
+                  type="email"
+                  value={newUser.email}
+                  onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                  required
+                  placeholder="Enter email address"
+                />
+              </div>
+              <div className="form-group">
+                <label>Password *</label>
+                <input
+                  type="password"
+                  value={newUser.password}
+                  onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                  required
+                  placeholder="Enter password (min 8 chars)"
+                  minLength="8"
+                />
+              </div>
+              <div className="form-group">
+                <label>Role *</label>
+                <select
+                  value={newUser.role}
+                  onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
+                  required
+                >
+                  <option value="Student">Student</option>
+                  <option value="Instructor">Instructor</option>
+                  <option value="Administrator">Administrator</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Phone</label>
+                <input
+                  type="tel"
+                  value={newUser.phone}
+                  onChange={(e) => setNewUser({ ...newUser, phone: e.target.value })}
+                  placeholder="Enter phone number"
+                />
+              </div>
+              <div className="form-group">
+                <label>Date of Birth</label>
+                <input
+                  type="date"
+                  value={newUser.dob}
+                  onChange={(e) => setNewUser({ ...newUser, dob: e.target.value })}
+                />
+              </div>
+              <div className="modal-actions">
+                <button type="button" className="btn-secondary" onClick={() => setShowAddUserModal(false)}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn-primary">
+                  Create User
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && selectedUser && (
+        <div className="modal-overlay" onClick={() => setShowDeleteConfirm(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>⚠️ Confirm Delete</h2>
+              <button className="modal-close" onClick={() => setShowDeleteConfirm(false)}>✕</button>
+            </div>
+            <div className="modal-body">
+              <p>Are you sure you want to delete this user?</p>
+              <div className="delete-user-info">
+                <p><strong>Name:</strong> {selectedUser.name}</p>
+                <p><strong>Email:</strong> {selectedUser.email}</p>
+                <p><strong>Role:</strong> {selectedUser.role}</p>
+              </div>
+              <p className="warning-text">⚠️ This action cannot be undone!</p>
+            </div>
+            <div className="modal-actions">
+              <button className="btn-secondary" onClick={() => setShowDeleteConfirm(false)}>
+                Cancel
+              </button>
+              <button className="btn-danger" onClick={handleDeleteUser}>
+                Delete User
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Threshold Card Component
+function ThresholdCard({ threshold, onUpdate }) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [valueNumeric, setValueNumeric] = useState(threshold.value_numeric || '');
+  const [valueText, setValueText] = useState(threshold.value_text || '');
+
+  const handleSave = () => {
+    onUpdate(
+      threshold.threshold_id,
+      valueNumeric !== '' ? parseFloat(valueNumeric) : null,
+      valueText !== '' ? valueText : null
+    );
+    setIsEditing(false);
+  };
+
+  const handleCancel = () => {
+    setValueNumeric(threshold.value_numeric || '');
+    setValueText(threshold.value_text || '');
+    setIsEditing(false);
+  };
+
+  const formatName = (name) => {
+    return name
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  };
+
+  return (
+    <div className={`threshold-card ${threshold.is_critical ? 'critical' : ''}`}>
+      <div className="threshold-header">
+        <h3>{formatName(threshold.name)}</h3>
+        {threshold.is_critical && <span className="critical-badge">Critical</span>}
+      </div>
+
+      {isEditing ? (
+        <div className="threshold-edit">
+          {threshold.value_numeric !== null && (
+            <div className="form-group">
+              <label>Numeric Value:</label>
+              <input
+                type="number"
+                step="0.01"
+                value={valueNumeric}
+                onChange={(e) => setValueNumeric(e.target.value)}
+                className="threshold-input"
+              />
+            </div>
+          )}
+          {threshold.value_text !== null && (
+            <div className="form-group">
+              <label>Text Value:</label>
+              <input
+                type="text"
+                value={valueText}
+                onChange={(e) => setValueText(e.target.value)}
+                className="threshold-input"
+              />
+            </div>
+          )}
+          <div className="threshold-actions">
+            <button onClick={handleSave} className="btn-save">💾 Save</button>
+            <button onClick={handleCancel} className="btn-cancel">❌ Cancel</button>
+          </div>
+        </div>
+      ) : (
+        <div className="threshold-display">
+          <div className="threshold-value">
+            {threshold.value_numeric !== null && (
+              <span className="value-numeric">{threshold.value_numeric}</span>
+            )}
+            {threshold.value_text !== null && (
+              <span className="value-text">{threshold.value_text}</span>
+            )}
+          </div>
+          <button onClick={() => setIsEditing(true)} className="btn-edit">
+            ✏️ Edit
+          </button>
+        </div>
+      )}
+
+      {threshold.updated_at && (
+        <div className="threshold-meta">
+          Last updated: {new Date(threshold.updated_at).toLocaleDateString()}
         </div>
       )}
     </div>

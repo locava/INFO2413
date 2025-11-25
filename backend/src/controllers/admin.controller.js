@@ -160,15 +160,21 @@ const adminController = {
   updateThreshold: async (req, res, next) => {
     try {
       const { id } = req.params;
-      const { value } = req.body;
-      
-      const updated = await require('../db/queries/threshold.queries').updateThreshold(id, value);
-      
+      const { valueNumeric, valueText } = req.body;
+      const updatedBy = req.session.user.user_id;
+
+      const updated = await require('../db/queries/threshold.queries').updateThreshold(
+        id,
+        valueNumeric || null,
+        valueText || null,
+        updatedBy
+      );
+
       if (!updated) {
         return res.status(404).json({ success: false, message: "Threshold not found" });
       }
 
-      res.json({ success: true, data: updated });
+      res.json({ success: true, data: updated, message: 'Threshold updated successfully' });
     } catch (error) {
       next(error);
     }

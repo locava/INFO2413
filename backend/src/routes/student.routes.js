@@ -2,6 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const studentController = require('../controllers/student.controller');
+const feedbackController = require('../controllers/feedback.controller');
 
 // ✅ FIX: Import the correct middleware we just created
 const { requireRole } = require('../middleware/auth.middleware');
@@ -24,5 +25,9 @@ router.delete('/study-sessions/:id', studentController.softDeleteStudySession);
 
 // GET /api/student/courses
 router.get('/courses', studentController.getStudentCourses);
+
+// ✅ NEW: Student Feedback (FR-I4 - student view)
+router.get('/feedback', feedbackController.getStudentFeedback);
+router.get('/courses/:courseId/feedback', feedbackController.getStudentCourseFeedback);
 
 module.exports = router;

@@ -105,8 +105,15 @@ export const studentAPI = {
       method: 'DELETE',
     }),
 
-  getCourses: () => 
+  getCourses: () =>
     apiRequest('/api/student/courses'),
+
+  // Feedback (FR-I4 - student view)
+  getFeedback: () =>
+    apiRequest('/api/student/feedback'),
+
+  getCourseFeedback: (courseId) =>
+    apiRequest(`/api/student/courses/${courseId}/feedback`),
 };
 
 // ============================================
@@ -179,9 +186,24 @@ export const instructorAPI = {
   
   getCourseStats: (courseId) =>
     apiRequest(`/api/instructor/course/${courseId}/stats`),
-    
-  getStudentSessions: (studentId, courseId) => 
+
+  getStudentSessions: (studentId, courseId) =>
     apiRequest(`/api/instructor/student/${studentId}/sessions/${courseId}`),
+
+  // Feedback (FR-I4)
+  createFeedback: (courseId, feedbackData) =>
+    apiRequest(`/api/instructor/courses/${courseId}/feedback`, {
+      method: 'POST',
+      body: JSON.stringify(feedbackData),
+    }),
+
+  getCourseFeedback: (courseId) =>
+    apiRequest(`/api/instructor/courses/${courseId}/feedback`),
+
+  deleteFeedback: (feedbackId) =>
+    apiRequest(`/api/instructor/feedback/${feedbackId}`, {
+      method: 'DELETE',
+    }),
 };
 
 // ============================================
@@ -245,10 +267,10 @@ export const adminAPI = {
   getThresholds: () =>
     apiRequest('/api/admin/thresholds'),
 
-  updateThreshold: (thresholdId, value) =>
+  updateThreshold: (thresholdId, { valueNumeric, valueText }) =>
     apiRequest(`/api/admin/thresholds/${thresholdId}`, {
       method: 'PUT',
-      body: JSON.stringify({ value }),
+      body: JSON.stringify({ valueNumeric, valueText }),
     }),
 
   // Reports

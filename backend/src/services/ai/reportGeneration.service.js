@@ -426,8 +426,9 @@ async function generateInstructorSummaryReport(instructorId, courseId, range = '
   const studentsResult = await pool.query(studentsQuery, [courseId]);
   const students = studentsResult.rows;
 
-  // Privacy check: hide data if < 1 student (changed from 5 for demo purposes)
-  if (students.length < 1) {
+  // Privacy check: hide data if < MIN_STUDENTS_FOR_AGGREGATES (default 5, configurable via env)
+  const minStudents = parseInt(process.env.MIN_STUDENTS_FOR_AGGREGATES || '5');
+  if (students.length < minStudents) {
     return {
       report_type: 'instructor_summary',
       instructor_id: instructorId,
@@ -436,7 +437,7 @@ async function generateInstructorSummaryReport(instructorId, courseId, range = '
       range,
       week_start: weekStart.toISOString().split('T')[0],
       week_end: weekEnd.toISOString().split('T')[0],
-      privacy_notice: 'No students enrolled in this course',
+      privacy_notice: `Insufficient students for aggregate report (minimum ${minStudents} required for privacy)`,
       students_enrolled: students.length,
       average_hours_per_student: 0,
       average_focus_score: 0,

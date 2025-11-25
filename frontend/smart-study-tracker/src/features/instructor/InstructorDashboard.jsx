@@ -18,13 +18,22 @@ function InstructorDashboard() {
   const [reportLoading, setReportLoading] = useState(false);
   const [studentsLoading, setStudentsLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState('overview'); // 'overview' or 'students'
-  
+  const [activeTab, setActiveTab] = useState('overview'); // 'overview', 'students', or 'feedback'
+
   // State for Search and Log Review
   const [searchQuery, setSearchQuery] = useState('');
   const [reviewingStudent, setReviewingStudent] = useState(null);
   const [studentLogs, setStudentLogs] = useState([]);
   const [logsLoading, setLogsLoading] = useState(false);
+
+  // State for Feedback (FR-I4)
+  const [feedbackList, setFeedbackList] = useState([]);
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [newFeedback, setNewFeedback] = useState({
+    studentId: null,
+    feedbackType: 'GENERAL',
+    message: ''
+  });
 
   useEffect(() => {
     fetchCourses();
@@ -34,7 +43,8 @@ function InstructorDashboard() {
   useEffect(() => {
     if (selectedCourse) {
       fetchCourseReport(selectedCourse.course_id);
-      fetchCourseStudents(selectedCourse.course_id); 
+      fetchCourseStudents(selectedCourse.course_id);
+      fetchCourseFeedback(selectedCourse.course_id);
     }
   }, [selectedCourse, searchQuery]); // Dependency includes searchQuery
 
@@ -110,6 +120,56 @@ function InstructorDashboard() {
       } finally {
           setLogsLoading(false);
       }
+  };
+
+  const fetchCourseFeedback = async (courseId) => {
+    try {
+      const response = await instructorAPI.getCourseFeedback(courseId);
+      if (response.success) {
+        setFeedbackList(response.data || []);
+      }
+    } catch (err) {
+      console.error('Failed to load feedback:', err);
+    }
+  };
+
+  const handleCreateFeedback = async (e) => {
+    e.preventDefault();
+    if (!selectedCourse || !newFeedback.message.trim()) {
+      alert('Please enter a feedback message');
+      return;
+    }
+
+    try {
+      const response = await instructorAPI.createFeedback(selectedCourse.course_id, {
+        studentId: newFeedback.studentId,
+        feedbackType: newFeedback.feedbackType,
+        message: newFeedback.message.trim()
+      });
+
+      if (response.success) {
+        alert('✅ Feedback added successfully!');
+        setShowFeedbackModal(false);
+        setNewFeedback({ studentId: null, feedbackType: 'GENERAL', message: '' });
+        fetchCourseFeedback(selectedCourse.course_id);
+      }
+    } catch (err) {
+      alert('❌ Failed to add feedback: ' + (err.message || 'Unknown error'));
+    }
+  };
+
+  const handleDeleteFeedback = async (feedbackId) => {
+    if (!confirm('Are you sure you want to delete this feedback?')) return;
+
+    try {
+      const response = await instructorAPI.deleteFeedback(feedbackId);
+      if (response.success) {
+        alert('✅ Feedback deleted successfully!');
+        fetchCourseFeedback(selectedCourse.course_id);
+      }
+    } catch (err) {
+      alert('❌ Failed to delete feedback: ' + (err.message || 'Unknown error'));
+    }
   };
 
   if (loading) {
@@ -218,6 +278,12 @@ function InstructorDashboard() {
             onClick={() => setActiveTab('students')}
           >
             👥 Students ({students.length})
+          </button>
+          <button
+            className={`tab-button ${activeTab === 'feedback' ? 'active' : ''}`}
+            onClick={() => setActiveTab('feedback')}
+          >
+            💬 Feedback ({feedbackList.length})
           </button>
         </div>
       )}
@@ -560,6 +626,132 @@ function InstructorDashboard() {
             </div>
           )}
         </>
+      )}
+
+      {/* Feedback Tab (FR-I4) */}
+      {activeTab === 'feedback' && (
+        <div className="card">
+          <div className="card-header">
+            <h2>💬 Course Feedback & Tips</h2>
+            <button
+              onClick={() => setShowFeedbackModal(true)}
+              className="btn-primary"
+            >
+              ➕ Add Feedback
+            </button>
+          </div>
+
+          <div className="feedback-info">
+            <p>Provide feedback and study tips to your students. Feedback can be course-wide or targeted to individual students.</p>
+          </div>
+
+          {feedbackList.length > 0 ? (
+            <div className="feedback-list">
+              {feedbackList.map((feedback) => (
+                <div key={feedback.feedback_id} className="feedback-item">
+                  <div className="feedback-header">
+                    <div>
+                      <span className={`feedback-type-badge ${feedback.feedback_type.toLowerCase()}`}>
+                        {feedback.feedback_type}
+                      </span>
+                      {feedback.student_name && (
+                        <span className="feedback-student">
+                          👤 {feedback.student_name}
+                        </span>
+                      )}
+                      {!feedback.student_name && (
+                        <span className="feedback-student course-wide">
+                          📢 Course-wide
+                        </span>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => handleDeleteFeedback(feedback.feedback_id)}
+                      className="btn-delete-small"
+                    >
+                      🗑️ Delete
+                    </button>
+                  </div>
+                  <div className="feedback-message">
+                    {feedback.message}
+                  </div>
+                  <div className="feedback-meta">
+                    Created: {new Date(feedback.created_at).toLocaleDateString()}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="no-data">No feedback added yet. Click "Add Feedback" to get started!</p>
+          )}
+        </div>
+      )}
+
+      {/* Add Feedback Modal */}
+      {showFeedbackModal && (
+        <div className="modal-overlay" onClick={() => setShowFeedbackModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>➕ Add Feedback</h2>
+              <button onClick={() => setShowFeedbackModal(false)} className="modal-close">✕</button>
+            </div>
+
+            <form onSubmit={handleCreateFeedback} className="feedback-form">
+              <div className="form-group">
+                <label>Feedback Type:</label>
+                <select
+                  value={newFeedback.feedbackType}
+                  onChange={(e) => setNewFeedback({ ...newFeedback, feedbackType: e.target.value })}
+                  className="form-input"
+                >
+                  <option value="GENERAL">General</option>
+                  <option value="STUDY_TIP">Study Tip</option>
+                  <option value="ENCOURAGEMENT">Encouragement</option>
+                  <option value="CONCERN">Concern</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>Target Student (optional):</label>
+                <select
+                  value={newFeedback.studentId || ''}
+                  onChange={(e) => setNewFeedback({ ...newFeedback, studentId: e.target.value || null })}
+                  className="form-input"
+                >
+                  <option value="">Course-wide (all students)</option>
+                  {students.map((student) => (
+                    <option key={student.user_id} value={student.user_id}>
+                      {student.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>Message: *</label>
+                <textarea
+                  value={newFeedback.message}
+                  onChange={(e) => setNewFeedback({ ...newFeedback, message: e.target.value })}
+                  className="form-textarea"
+                  rows="5"
+                  placeholder="Enter your feedback message..."
+                  required
+                />
+              </div>
+
+              <div className="modal-actions">
+                <button type="submit" className="btn-primary">💾 Save Feedback</button>
+                <button
+                  type="button"
+                  onClick={() => setShowFeedbackModal(false)}
+                  className="btn-secondary"
+                >
+                  ❌ Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   );
