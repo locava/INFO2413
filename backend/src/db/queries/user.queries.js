@@ -9,7 +9,6 @@ const userQueries = {
     return result.rows[0];
   },
 
-  // ✅ FIX 1: Select 'name' column, not 'first_name, last_name' (which don't exist)
   findUserById: async (id) => {
     const query = `SELECT user_id, name, email, role, status, password_hash FROM users WHERE user_id = $1`;
     const result = await pool.query(query, [id]);
@@ -17,24 +16,27 @@ const userQueries = {
   },
 
   create: async (userData) => {
-    const { name, first_name, last_name, email, password, role, studentNumber, program } = userData;
+    // Extract fields needed for users table
+    const { name, first_name, last_name, email, password, role, phone } = userData; 
+    
+    // Extract fields needed for instructor/student profiles (passed from admin service form data)
+    const { studentNumber, program, workingId, department } = userData; // ✅ EXTRACT PROFILE DATA
 
-    // ✅ FIX 2: Use 'name' if provided. If not, safely combine first/last.
-    // This prevents "undefined undefined".
     const fullName = name || `${first_name || ''} ${last_name || ''}`.trim();
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const query = `
-      INSERT INTO users (name, email, password_hash, role, status)
-      VALUES ($1, $2, $3, $4, 'Active')
+      INSERT INTO users (name, email, password_hash, role, status, phone)
+      VALUES ($1, $2, $3, $4, 'Active', $5)
       RETURNING user_id, name, email, role
     `;
 
-    const result = await pool.query(query, [fullName, email, hashedPassword, role]);
-    const user = result.rows[0];
+    // 1. Insert into users table
+    const user = await pool.query(query, [fullName, email, hashedPassword, role, phone || null]);
+    const newUser = user.rows[0];
 
-    // If creating a student, also create student record
+    // 2. Insert into profile-specific tables based on role
     if (role === 'Student') {
       const studentNum = studentNumber || `B00${Math.floor(Math.random() * 900000 + 100000)}`;
       const studentQuery = `
@@ -42,12 +44,27 @@ const userQueries = {
         VALUES ($1, $2, $3)
         RETURNING *
       `;
-      await pool.query(studentQuery, [user.user_id, studentNum, program || null]);
+      await pool.query(studentQuery, [newUser.user_id, studentNum, program || null]);
+    } 
+    
+    // ✅ FIX: Implement Instructor profile creation
+    else if (role === 'Instructor') {
+        const instructorQuery = `
+            INSERT INTO instructors (user_id, working_id, department)
+            VALUES ($1, $2, $3)
+            RETURNING user_id
+        `;
+        // Ensure workingId is used, as it's required for NOT NULL constraint
+        await pool.query(instructorQuery, [
+            newUser.user_id, 
+            workingId, // Must use workingId as passed from Admin form
+            department || null // Use department if available, otherwise set null
+        ]);
     }
 
     // Return the user exactly as it is in the DB
-    return user;
-  },
+    return newUser;
+    },
 
   getAllUsers: async (roleFilter = null) => {
     let query = `
@@ -84,9 +101,6 @@ const userQueries = {
     const values = [];
     let index = 1;
 
-    // We must find the user first to preserve the name structure if needed
-    // In this case, we skip the name parsing since the controller handles it.
-
     // 2. Iterate over the data payload to build the query dynamically
     if (userData.name !== undefined) {
         fields.push(`name = $${index++}`);
@@ -96,8 +110,7 @@ const userQueries = {
         fields.push(`email = $${index++}`);
         values.push(userData.email);
     }
-    // Note: The controller should have ensured role and status are NOT in userData 
-    // unless you intend to update them. Since they are protected, they won't be here.
+
     if (userData.phone !== undefined) {
         fields.push(`phone = $${index++}`);
         values.push(userData.phone);

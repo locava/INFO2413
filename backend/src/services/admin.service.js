@@ -1,11 +1,10 @@
-// src/services/admin.service.js
+// backend/src/services/admin.service.js
 const bcrypt = require('bcryptjs');
 const courseService = require('./course.service');
 const userQueries = require('../db/queries/user.queries');
 const instructorQueries = require('../db/queries/instructor.queries');
 
 async function createCourse(data) {
-  // Delegate to course service
   return courseService.createCourse(data);
 }
 
@@ -20,10 +19,10 @@ async function deleteCourse(courseId) {
 /**
  * Admin-created users
  * Allowed roles here: 'Instructor', 'Administrator'
- * (Students self-register via /auth/register)
  */
 async function createUser(data) {
-  const { name, email, password, role, instructorNumber, department } = data;
+  // Extract all fields needed for both tables
+  const { name, email, password, role, workingId, phone, department } = data; 
 
   if (!['Instructor', 'Administrator'].includes(role)) {
     const error = new Error('Invalid role for admin-created user');
@@ -40,22 +39,26 @@ async function createUser(data) {
 
   const passwordHash = await bcrypt.hash(password, 10);
 
+  // 1. Insert into users table
   const user = await userQueries.insertUser({
     name,
     email,
     passwordHash,
     role,
+    phone, // Include phone number here
   });
 
-  // If instructor, also add to instructors table
+  // 2. If instructor, create the profile in the 'instructors' table
   if (role === 'Instructor') {
+    // We assume instructorQueries.insertInstructor accepts these three specific parameters:
     await instructorQueries.insertInstructor({
-      userId: user.id,
-      instructorNumber: instructorNumber || null,
-      department: department || null,
+      userId: user.user_id,             // The UUID primary key from the new user record
+      workingId: workingId || null,     // The required unique ID from the form
+      department: department || null,   // Include department for the instructor profile
     });
   }
 
+  // 3. Return the newly created base user object
   return user;
 }
 

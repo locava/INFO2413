@@ -14,6 +14,24 @@ function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('overview'); // 'overview', 'users', 'courses', 'alerts', 'data-quality'
+  
+  // State for Instructor Creation Form
+  const [isCreatingInstructor, setIsCreatingInstructor] = useState(false);
+  const [newInstructorData, setNewInstructorData] = useState({
+    name: '', email: '', phone: '', workingId: '', department: '', password: 'password123', role: 'Instructor',
+  });
+  
+  // State for Course Creation
+  const [isCreatingCourse, setIsCreatingCourse] = useState(false);
+  const [newCourseData, setNewCourseData] = useState({
+    courseName: '', courseCode: '', instructorId: '', 
+  });
+  const [availableInstructors, setAvailableInstructors] = useState([]); 
+
+  const [formMessage, setFormMessage] = useState({ type: '', text: '' });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // 🛑 REMOVED: userToDelete state is no longer needed
 
   useEffect(() => {
     fetchData();
@@ -33,35 +51,149 @@ function AdminDashboard() {
         adminAPI.getDataQuality()
       ]);
 
-      if (reportResponse.success) {
-        setSystemReport(reportResponse.data);
-      }
-
+      if (reportResponse.success) setSystemReport(reportResponse.data);
       if (usersResponse.success) {
         setUsers(usersResponse.data || []);
+        const instructors = usersResponse.data.filter(u => u.role === 'Instructor');
+        setAvailableInstructors(instructors);
       }
-
-      if (coursesResponse.success) {
-        setCourses(coursesResponse.data || []);
-      }
-
-      if (alertsResponse.success) {
-        setAlerts(alertsResponse.data || []);
-      }
-
-      if (notificationsResponse.success) {
-        setNotifications(notificationsResponse.data || []);
-      }
-
-      if (dataQualityResponse.success) {
-        setDataQuality(dataQualityResponse.data);
-      }
+      if (coursesResponse.success) setCourses(coursesResponse.data || []);
+      if (alertsResponse.success) setAlerts(alertsResponse.data || []);
+      if (notificationsResponse.success) setNotifications(notificationsResponse.data || []);
+      if (dataQualityResponse.success) setDataQuality(dataQualityResponse.data);
+      
     } catch (err) {
       setError(err.message || 'Failed to load system data');
     } finally {
       setLoading(false);
     }
   };
+  
+  // Handler for instructor form input changes
+  const handleInstructorInputChange = (e) => {
+    setNewInstructorData({
+      ...newInstructorData,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  // Handler for course form input changes
+  const handleCourseInputChange = (e) => {
+    setNewCourseData({
+      ...newCourseData,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  // Handler for instructor form submission (existing logic)
+  const handleCreateInstructorSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setFormMessage({ type: '', text: '' });
+
+    try {
+      // Basic validation
+      if (!newInstructorData.name || !newInstructorData.email || !newInstructorData.workingId || !newInstructorData.department) {
+        setFormMessage({ type: 'error', text: 'Name, Email, Working ID, and Department are required.' });
+        setIsSubmitting(false);
+        return;
+      }
+      
+      const response = await adminAPI.createUser(newInstructorData);
+
+      if (response.success) {
+        setFormMessage({ type: 'success', text: `Instructor ${response.data.name} created successfully!` });
+        
+        setTimeout(() => {
+            setIsCreatingInstructor(false);
+            setNewInstructorData({ name: '', email: '', phone: '', workingId: '', department: '', password: 'password123', role: 'Instructor' });
+            fetchData(); // Refresh data including user/instructor lists
+        }, 1500);
+
+      } else {
+        setFormMessage({ type: 'error', text: response.message || 'Creation failed due to server error.' });
+      }
+
+    } catch (err) {
+      setFormMessage({ type: 'error', text: err.message || 'Network error during creation.' });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+  
+  // Handler for course form submission (existing logic)
+  const handleCreateCourseSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setFormMessage({ type: '', text: '' });
+
+    try {
+      // Validation
+      if (!newCourseData.courseName || !newCourseData.courseCode || !newCourseData.instructorId) {
+        setFormMessage({ type: 'error', text: 'Course Name, Code, and Instructor are required.' });
+        setIsSubmitting(false);
+        return;
+      }
+      
+      const payload = {
+        course_name: newCourseData.courseName,
+        course_code: newCourseData.courseCode,
+        instructor_id: newCourseData.instructorId,
+      };
+
+      const response = await adminAPI.createCourse(payload);
+
+      if (response.success) {
+        setFormMessage({ type: 'success', text: `Course ${response.data.course_code} created successfully!` });
+        
+        setTimeout(() => {
+            setIsCreatingCourse(false);
+            setNewCourseData({ courseName: '', courseCode: '', instructorId: '' });
+            fetchData(); // Refresh course list
+        }, 1500);
+
+      } else {
+        setFormMessage({ type: 'error', text: response.message || 'Course creation failed.' });
+      }
+
+    } catch (err) {
+      setFormMessage({ type: 'error', text: err.message || 'Network error during course creation.' });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+// ✅ MODIFIED: Function now accepts user directly and uses window.confirm()
+const executeDelete = async (user) => {
+    // 1. Use default browser confirmation dialog
+    const confirmed = window.confirm(
+        `Are you sure you want to DEACTIVATE the account for ${user.name} (${user.role})? \n\nThis action will set the user's status to 'Inactive'.`
+    );
+
+    if (!confirmed) {
+        return;
+    }
+
+    setLoading(true);
+
+    try {
+        // 2. Call the API endpoint
+        const response = await adminAPI.deleteUser(user.user_id);
+
+        if (response.success) {
+            // Success: User deleted (status set to Inactive), refresh data to update table
+            fetchData();
+        } else {
+            // Display an alert for API failure
+            alert(`Deletion failed: ${response.message || 'Server error.'}`);
+            setLoading(false); 
+        }
+
+    } catch (err) {
+        alert('Network error during user deletion. Check console for details.');
+        setLoading(false);
+    }
+};
 
   if (loading) {
     return (
@@ -95,13 +227,231 @@ function AdminDashboard() {
           <h1>System Administration</h1>
           <p className="page-subtitle">Welcome, {user?.name}</p>
         </div>
-        <button onClick={fetchData} className="btn-primary">
-          🔄 Refresh Data
-        </button>
+        
+        {/* Refresh Button remains in the header's flex container */}
+        <div style={{ display: 'flex', gap: '10px' }}>
+            <button onClick={fetchData} className="btn-primary">
+                🔄 Refresh Data
+            </button>
+        </div>
+      </div>
+      
+      {/* MOVED BUTTON BLOCK */}
+      <div style={{ marginBottom: '20px', display: 'flex', gap: '10px', justifyContent: 'flex-start' }}>
+          
+          {/* Create Instructor Button */}
+          <button 
+              onClick={() => { setIsCreatingInstructor(prev => !prev); setIsCreatingCourse(false); }} 
+              className="btn-primary"
+              style={{ backgroundColor: isCreatingInstructor ? '#ef4444' : '#10b981', padding: '10px 15px' }}
+          >
+              {isCreatingInstructor ? '✕ Cancel Instructor' : '➕ Create Instructor'}
+          </button>
+          
+          {/* Create Course Button */}
+          <button 
+              onClick={() => { setIsCreatingCourse(prev => !prev); setIsCreatingInstructor(false); }} 
+              className="btn-primary"
+              style={{ backgroundColor: isCreatingCourse ? '#ef4444' : '#6366f1', padding: '10px 15px' }}
+          >
+              {isCreatingCourse ? '✕ Cancel Course' : '📚 Create Course'}
+          </button>
+          
       </div>
 
+      {/* -------------------------------------------
+      // INSTRUCTOR CREATION FORM
+      // ------------------------------------------- */}
+      {isCreatingInstructor && (
+        <div className="card instructor-creation-form" style={{ marginBottom: '20px' }}>
+            <h2>Create New Instructor Account</h2>
+            
+            {formMessage.text && (
+                <div 
+                    style={{ 
+                        padding: '10px', marginBottom: '15px', borderRadius: '4px',
+                        backgroundColor: formMessage.type === 'error' ? '#fee2e2' : '#d1fae5',
+                        color: formMessage.type === 'error' ? '#991b1b' : '#065f46',
+                        border: `1px solid ${formMessage.type === 'error' ? '#fca5a5' : '#a7f3d0'}`,
+                        fontWeight: 'bold'
+                    }}
+                >
+                    {formMessage.text}
+                </div>
+            )}
+
+            <form onSubmit={handleCreateInstructorSubmit} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                {/* Name */}
+                <div className="form-group">
+                    <label>Full Name</label>
+                    <input 
+                        type="text" 
+                        name="name" 
+                        value={newInstructorData.name} 
+                        onChange={handleInstructorInputChange} 
+                        required 
+                        style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px', width: '100%' }}
+                    />
+                </div>
+                
+                {/* Email */}
+                <div className="form-group">
+                    <label>Email</label>
+                    <input 
+                        type="email" 
+                        name="email" 
+                        value={newInstructorData.email} 
+                        onChange={handleInstructorInputChange} 
+                        required 
+                        style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px', width: '100%' }}
+                    />
+                </div>
+
+                {/* Working ID */}
+                <div className="form-group">
+                    <label>Working ID (Unique)</label>
+                    <input 
+                        type="text" 
+                        name="workingId" 
+                        value={newInstructorData.workingId} 
+                        onChange={handleInstructorInputChange} 
+                        required 
+                        style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px', width: '100%' }}
+                    />
+                </div>
+
+                {/* Phone */}
+                <div className="form-group">
+                    <label>Phone Number (Optional)</label>
+                    <input 
+                        type="text" 
+                        name="phone" 
+                        value={newInstructorData.phone} 
+                        onChange={handleInstructorInputChange} 
+                        style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px', width: '100%' }}
+                    />
+                </div>
+                
+                {/* Department Input Field */}
+                <div className="form-group">
+                    <label>Department</label>
+                    <input 
+                        type="text" 
+                        name="department" 
+                        value={newInstructorData.department} 
+                        onChange={handleInstructorInputChange} 
+                        required 
+                        style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px', width: '100%' }}
+                    />
+                </div>
+
+                {/* Placeholder/Empty div to align layout */}
+                <div className="form-group">
+                    {/* Keeps the grid layout consistent */}
+                </div>
+                
+                {/* Hidden/Default Password field for security */}
+                <input type="hidden" name="password" value={newInstructorData.password} />
+                <p style={{ gridColumn: 'span 2', fontSize: '0.9em', color: '#666', marginTop: '-10px' }}>
+                    *Initial Password: **{newInstructorData.password}** (User must change on first login)
+                </p>
+
+                {/* Submit Button */}
+                <div style={{ gridColumn: 'span 2', textAlign: 'right', paddingTop: '10px' }}>
+                    <button 
+                        type="submit" 
+                        disabled={isSubmitting} 
+                        className="btn-primary" 
+                        style={{ padding: '10px 20px', backgroundColor: '#6366f1', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                    >
+                        {isSubmitting ? 'Creating...' : 'Create Instructor Account'}
+                    </button>
+                </div>
+            </form>
+        </div>
+      )}
+
+      {/* -------------------------------------------
+      // COURSE CREATION FORM
+      // ------------------------------------------- */}
+      {isCreatingCourse && (
+        <div className="card course-creation-form" style={{ marginBottom: '20px' }}>
+            <h2>Create New Course</h2>
+            
+            {formMessage.text && (
+                <div 
+                    style={{ 
+                        padding: '10px', marginBottom: '15px', borderRadius: '4px',
+                        backgroundColor: formMessage.type === 'error' ? '#fee2e2' : '#d1fae5',
+                        color: formMessage.type === 'error' ? '#991b1b' : '#065f46',
+                        border: `1px solid ${formMessage.type === 'error' ? '#fca5a5' : '#a7f3d0'}`,
+                        fontWeight: 'bold'
+                    }}
+                >
+                    {formMessage.text}
+                </div>
+            )}
+
+            <form onSubmit={handleCreateCourseSubmit} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                {/* Course Name */}
+                <div className="form-group">
+                    <label>Course Name</label>
+                    <input 
+                        type="text" 
+                        name="courseName" 
+                        value={newCourseData.courseName} 
+                        onChange={handleCourseInputChange} 
+                        required 
+                        style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px', width: '100%' }}
+                    />
+                </div>
+                
+                {/* Course Code */}
+                <div className="form-group">
+                    <label>Course Code (e.g., INFO2413)</label>
+                    <input 
+                        type="text" 
+                        name="courseCode" 
+                        value={newCourseData.courseCode} 
+                        onChange={handleCourseInputChange} 
+                        required 
+                        style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px', width: '100%' }}
+                    />
+                </div>
+
+                {/* Instructor Selection (Dropdown) */}
+                <div className="form-group" style={{ gridColumn: 'span 2' }}>
+                    <label>Assign Instructor</label>
+                    <select
+                        name="instructorId"
+                        value={newCourseData.instructorId}
+                        onChange={handleCourseInputChange}
+                        required
+                        style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px', width: '100%', backgroundColor: 'white' }}
+                    >
+                        <option value="">-- Select Instructor --</option>
+                        {availableInstructors.map(inst => (
+                            // The value must be the user_id (UUID) which is the FK in the courses table
+                            <option key={inst.user_id} value={inst.user_id}>
+                                {inst.name} ({inst.email})
+                            </option>
+                        ))}
+                    </select>
+                </div>
+
+                {/* Submit Button */}
+                <div style={{ gridColumn: 'span 2', textAlign: 'right', paddingTop: '10px' }}>
+                    <button type="submit" disabled={isSubmitting} className="btn-primary" style={{ padding: '10px 20px', backgroundColor: '#6366f1', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+                        {isSubmitting ? 'Creating Course...' : 'Create Course'}
+                    </button>
+                </div>
+            </form>
+        </div>
+      )}
+      
       {/* User Statistics */}
       <div className="summary-cards">
+      {/* ... (Summary Cards content remains the same) ... */}
         <div className="summary-card stat-primary">
           <div className="summary-icon">👥</div>
           <div className="summary-content">
@@ -140,6 +490,7 @@ function AdminDashboard() {
       </div>
 
       {/* Tab Navigation */}
+      {/* ... (Tab Navigation content remains the same) ... */}
       <div className="tabs-container">
         <button
           className={`tab-button ${activeTab === 'overview' ? 'active' : ''}`}
@@ -176,6 +527,7 @@ function AdminDashboard() {
       {/* Overview Tab */}
       {activeTab === 'overview' && systemReport && (
         <>
+          {/* ... (Overview Tab content remains the same) ... */}
           <div className="card">
             <h2>🤖 AI System Status</h2>
             <div className="diagnostics-grid">
@@ -279,6 +631,8 @@ function AdminDashboard() {
                     <th>Role</th>
                     <th>Status</th>
                     <th>Joined</th>
+                    {/* Add action column later: <th>Actions</th> */}
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -304,6 +658,25 @@ function AdminDashboard() {
                       <td className="user-date">
                         {user.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'}
                       </td>
+                      <td>
+                        <button 
+                          onClick={() => executeDelete(user)}
+                          style={{
+                            backgroundColor: 'transparent',
+                            border: 'none',
+                            color: '#dc2626', // Red color for delete
+                            cursor: 'pointer',
+                            fontSize: '18px',
+                            opacity: user.role === 'Administrator' ? 0.5 : 1, // Optional: Dim if Admin
+                            pointerEvents: user.role === 'Administrator' ? 'none' : 'auto' // Prevent deleting admin
+                          }}
+                          title={`Delete ${user.name}`}
+                          // Prevent deleting the user if they are the Admin
+                          disabled={user.role === 'Administrator'} 
+                        >
+                          Delete
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -323,6 +696,7 @@ function AdminDashboard() {
             <span className="user-count-badge">{courses.length} total courses</span>
           </div>
 
+          {/* ... (Courses Tab content remains the same) ... */}
           {courses.length > 0 ? (
             <div className="courses-grid">
               {courses.map(course => (
@@ -454,6 +828,7 @@ function AdminDashboard() {
             <span className="user-count-badge">Real-time metrics</span>
           </div>
 
+          {/* ... (Data Quality Tab content remains the same) ... */}
           <div className="data-quality-grid">
             {/* Sessions Quality */}
             <div className="quality-card">
@@ -590,4 +965,3 @@ function AdminDashboard() {
 }
 
 export default AdminDashboard;
-

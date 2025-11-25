@@ -2,19 +2,18 @@ const pool = require('../pool');
 
 const courseQueries = {
   createCourse: async (courseData) => {
-    // Schema check: Ensure your DB actually uses "course_name".
-    // If it uses just "name", change it below.
-    const { code, title, description, instructor_id } = courseData;
+    // ✅ FIX: Use the key name sent by the frontend payload
+    const { course_code, course_name, instructor_id } = courseData; 
 
     const query = `
       INSERT INTO courses (course_code, course_name, instructor_id, is_active)
       VALUES ($1, $2, $3, true)
       RETURNING *
     `;
-    // Note: If schema has 'description', add it. If not, this is correct.
-    const result = await pool.query(query, [code, title, instructor_id]);
+    // Pass the correct values
+    const result = await pool.query(query, [course_code, course_name, instructor_id]); 
     return result.rows[0];
-  },
+    },
 
   getAllCourses: async () => {
     const query = `
