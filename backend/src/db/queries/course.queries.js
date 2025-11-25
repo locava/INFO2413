@@ -79,13 +79,13 @@ const courseQueries = {
 
   getEnrolledCoursesByStudent: async (studentId) => {
         const query = `
-            SELECT c.course_id, c.course_code, c.course_name, c.instructor_id
-            FROM courses c /* Select directly from courses table */
-            WHERE 1=1 /* TEMPORARILY IGNORE ENROLLMENT FILTER! */
+            SELECT c.course_id, c.course_code, c.course_name, c.instructor_id, e.enrolled_at
+            FROM courses c
+            JOIN enrollments e ON c.course_id = e.course_id
+            WHERE e.student_id = $1
             ORDER BY c.course_code;
         `;
-        // IMPORTANT: The query parameters must be empty since the WHERE clause is ignored.
-        const result = await pool.query(query); 
+        const result = await pool.query(query, [studentId]);
         return result.rows;
     },
 };

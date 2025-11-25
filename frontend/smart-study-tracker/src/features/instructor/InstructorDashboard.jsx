@@ -135,25 +135,44 @@ function InstructorDashboard() {
 
   const handleCreateFeedback = async (e) => {
     e.preventDefault();
-    if (!selectedCourse || !newFeedback.message.trim()) {
-      alert('Please enter a feedback message');
+
+    // Validation
+    if (!selectedCourse) {
+      alert('⚠️ Please select a course first');
+      return;
+    }
+
+    if (!newFeedback.message || !newFeedback.message.trim()) {
+      alert('⚠️ Please enter a feedback message');
       return;
     }
 
     try {
-      const response = await instructorAPI.createFeedback(selectedCourse.course_id, {
+      console.log('📤 Sending feedback:', {
+        courseId: selectedCourse.course_id,
         studentId: newFeedback.studentId,
         feedbackType: newFeedback.feedbackType,
         message: newFeedback.message.trim()
       });
+
+      const response = await instructorAPI.createFeedback(selectedCourse.course_id, {
+        studentId: newFeedback.studentId || null,
+        feedbackType: newFeedback.feedbackType,
+        message: newFeedback.message.trim()
+      });
+
+      console.log('📥 Feedback response:', response);
 
       if (response.success) {
         alert('✅ Feedback added successfully!');
         setShowFeedbackModal(false);
         setNewFeedback({ studentId: null, feedbackType: 'GENERAL', message: '' });
         fetchCourseFeedback(selectedCourse.course_id);
+      } else {
+        alert('❌ Failed to add feedback: ' + (response.message || 'Unknown error'));
       }
     } catch (err) {
+      console.error('❌ Feedback creation error:', err);
       alert('❌ Failed to add feedback: ' + (err.message || 'Unknown error'));
     }
   };
@@ -689,19 +708,34 @@ function InstructorDashboard() {
 
       {/* Add Feedback Modal */}
       {showFeedbackModal && (
-        <div className="modal-overlay" onClick={() => setShowFeedbackModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-overlay" onClick={() => {
+          console.log('🔴 Modal overlay clicked - closing modal');
+          setShowFeedbackModal(false);
+        }}>
+          <div className="modal-content" onClick={(e) => {
+            console.log('⚪ Modal content clicked - preventing close');
+            e.stopPropagation();
+          }}>
             <div className="modal-header">
               <h2>➕ Add Feedback</h2>
-              <button onClick={() => setShowFeedbackModal(false)} className="modal-close">✕</button>
+              <button onClick={() => {
+                console.log('❌ Close button clicked');
+                setShowFeedbackModal(false);
+              }} className="modal-close">✕</button>
             </div>
 
-            <form onSubmit={handleCreateFeedback} className="feedback-form">
+            <form onSubmit={(e) => {
+              console.log('📝 Form submitted');
+              handleCreateFeedback(e);
+            }} className="feedback-form">
               <div className="form-group">
                 <label>Feedback Type:</label>
                 <select
                   value={newFeedback.feedbackType}
-                  onChange={(e) => setNewFeedback({ ...newFeedback, feedbackType: e.target.value })}
+                  onChange={(e) => {
+                    console.log('📋 Feedback type changed:', e.target.value);
+                    setNewFeedback({ ...newFeedback, feedbackType: e.target.value });
+                  }}
                   className="form-input"
                 >
                   <option value="GENERAL">General</option>
@@ -715,23 +749,38 @@ function InstructorDashboard() {
                 <label>Target Student (optional):</label>
                 <select
                   value={newFeedback.studentId || ''}
-                  onChange={(e) => setNewFeedback({ ...newFeedback, studentId: e.target.value || null })}
+                  onChange={(e) => {
+                    console.log('👤 Student changed:', e.target.value);
+                    setNewFeedback({ ...newFeedback, studentId: e.target.value || null });
+                  }}
                   className="form-input"
                 >
                   <option value="">Course-wide (all students)</option>
-                  {students.map((student) => (
-                    <option key={student.user_id} value={student.user_id}>
-                      {student.name}
-                    </option>
-                  ))}
+                  {students.length > 0 ? (
+                    students.map((student) => (
+                      <option key={student.student_id || student.user_id} value={student.student_id || student.user_id}>
+                        {student.name}
+                      </option>
+                    ))
+                  ) : (
+                    <option disabled>Loading students...</option>
+                  )}
                 </select>
+                {students.length === 0 && (
+                  <small style={{color: '#666', fontSize: '12px'}}>
+                    ℹ️ No students loaded. You can still send course-wide feedback.
+                  </small>
+                )}
               </div>
 
               <div className="form-group">
                 <label>Message: *</label>
                 <textarea
                   value={newFeedback.message}
-                  onChange={(e) => setNewFeedback({ ...newFeedback, message: e.target.value })}
+                  onChange={(e) => {
+                    console.log('💬 Message changed:', e.target.value.substring(0, 20) + '...');
+                    setNewFeedback({ ...newFeedback, message: e.target.value });
+                  }}
                   className="form-textarea"
                   rows="5"
                   placeholder="Enter your feedback message..."
@@ -740,10 +789,19 @@ function InstructorDashboard() {
               </div>
 
               <div className="modal-actions">
-                <button type="submit" className="btn-primary">💾 Save Feedback</button>
+                <button
+                  type="submit"
+                  className="btn-primary"
+                  onClick={() => console.log('💾 Save button clicked')}
+                >
+                  💾 Save Feedback
+                </button>
                 <button
                   type="button"
-                  onClick={() => setShowFeedbackModal(false)}
+                  onClick={() => {
+                    console.log('❌ Cancel button clicked');
+                    setShowFeedbackModal(false);
+                  }}
                   className="btn-secondary"
                 >
                   ❌ Cancel
